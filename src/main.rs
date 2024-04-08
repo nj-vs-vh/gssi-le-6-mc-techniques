@@ -1,6 +1,7 @@
 use clap::Parser;
 
 mod ex1;
+mod utils;
 
 #[derive(Parser, Debug)]
 #[command(name = "AoC 2022 solutions")]
@@ -17,7 +18,7 @@ fn main() {
     match args.exercise.as_str() {
         "1" => ex1::uniform_random_sampling(),
         _ => {
-            println!("Exercise not found");
+            println!("Exercise {:?} not found", args.exercise);
         }
     }
 }
