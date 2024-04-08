@@ -1,4 +1,4 @@
-use crate::utils::plot_histogram::plot_histogram;
+use crate::utils::plot_histogram::{plot_histogram, XLim};
 use ndhistogram::{
     axis::{Axis, UniformNoFlow},
     ndhistogram, AxesTuple, Histogram, VecHistogram,
@@ -96,13 +96,14 @@ impl MLCG {
                 ),
                 "u32 value",
                 &format!("out/ex1/{}-2^{:.0}.png", name, log2_size),
+                XLim::FromData,
             )
             .expect("Failed to plot histogram");
         }
     }
 }
 
-pub fn uniform_random_sampling() {
+pub fn ex1() {
     println!("\nEx 1: Uniform random sampling");
     MLCG::new(987654321, 663608941).run_tests("Simple MLCG");
     MLCG::new(10, 9).run_tests("Bad MLCG");

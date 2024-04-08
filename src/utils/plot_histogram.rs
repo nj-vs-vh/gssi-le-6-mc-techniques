@@ -1,11 +1,17 @@
 use ndhistogram::{axis::UniformNoFlow, AxesTuple, Histogram as Hist};
 use plotters::prelude::*;
 
+pub enum XLim {
+    FromData,
+    Range(f64, f64),
+}
+
 pub fn plot_histogram(
     hist: &dyn Hist<AxesTuple<(UniformNoFlow,)>, f64>,
     title: &str,
     x_caption: &str,
     filename: &str,
+    xlim: XLim,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let hist_axis = hist.axes().as_tuple().0.to_owned();
     let hist_max_count = hist.values().fold(f64::NEG_INFINITY, |a, &b| a.max(b));
@@ -20,7 +26,10 @@ pub fn plot_histogram(
         .x_label_area_size(40)
         .caption(title, ("sans-serif", 20))
         .build_cartesian_2d(
-            hist_axis.low().to_owned()..hist_axis.high().to_owned(),
+            match xlim {
+                XLim::FromData => hist_axis.low().to_owned()..hist_axis.high().to_owned(),
+                XLim::Range(low, high) => low..high,
+            },
             0.0..(hist_max_count * 1.05),
         )?;
 
