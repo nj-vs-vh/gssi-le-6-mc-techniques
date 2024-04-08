@@ -13,8 +13,6 @@ struct CliArgs {
 
 fn main() {
     let args = CliArgs::parse();
-    println!("Running ex. {}\n", args.exercise);
-
     match args.exercise.as_str() {
         "1" => ex1::uniform_random_sampling(),
         _ => {

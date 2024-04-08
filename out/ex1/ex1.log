@@ -1,0 +1,71 @@
+
+Ex 1: Uniform random sampling
+
+Testing Simple MLCG
+Full iteration: 1073741824 steps (log2(steps) = 30), took 4.69 seconds
+
+Histograming with sample size = Some(1024)
+Histogram filled in 0.00 sec
+Histogram chi2 / d.o.f. = 0.7402439024390247
+Histogram has been saved to out/ex1/Simple MLCG-2^10.png
+
+Histograming with sample size = Some(32768)
+Histogram filled in 0.00 sec
+Histogram chi2 / d.o.f. = 1.0199697885196377
+Histogram has been saved to out/ex1/Simple MLCG-2^15.png
+
+Histograming with sample size = Some(1048576)
+Histogram filled in 0.04 sec
+Histogram chi2 / d.o.f. = 1.3205646414140306
+Histogram has been saved to out/ex1/Simple MLCG-2^20.png
+
+Histograming with sample size = Some(33554432)
+Histogram filled in 1.41 sec
+Histogram chi2 / d.o.f. = 0.8355997584581448
+Histogram has been saved to out/ex1/Simple MLCG-2^25.png
+
+Histograming with sample size = None
+Histogram filled in 45.11 sec
+Histogram chi2 / d.o.f. = 0.000000016503036022602618
+Histogram has been saved to out/ex1/Simple MLCG-2^30.png
+
+Testing Bad MLCG
+Full iteration: 268435456 steps (log2(steps) = 28), took 1.17 seconds
+
+Histograming with sample size = Some(1024)
+Histogram filled in 0.00 sec
+Histogram chi2 / d.o.f. = 1.0192682926829275
+Histogram has been saved to out/ex1/Bad MLCG-2^10.png
+
+Histograming with sample size = Some(32768)
+Histogram filled in 0.00 sec
+Histogram chi2 / d.o.f. = 1.2246144221672923
+Histogram has been saved to out/ex1/Bad MLCG-2^15.png
+
+Histograming with sample size = Some(1048576)
+Histogram filled in 0.04 sec
+Histogram chi2 / d.o.f. = 0.833544613318812
+Histogram has been saved to out/ex1/Bad MLCG-2^20.png
+
+Histograming with sample size = Some(33554432)
+Histogram filled in 1.41 sec
+Histogram chi2 / d.o.f. = 0.7983531150712634
+Histogram has been saved to out/ex1/Bad MLCG-2^25.png
+
+Histograming with sample size = None
+Histogram filled in 11.23 sec
+Histogram chi2 / d.o.f. = 0.00000009968876838725717
+Histogram has been saved to out/ex1/Bad MLCG-2^28.png
+
+Ex 1.1: MINSTD algorithm
+Seed 1          -> period 536870912 (12.50% of u32 range)
+Seed 2          -> period 268435456 (6.25% of u32 range)
+Seed 3          -> period 536870912 (12.50% of u32 range)
+Seed 5          -> period 536870912 (12.50% of u32 range)
+Seed 16         -> period  33554432 (0.78% of u32 range)
+Seed 100        -> period 134217728 (3.13% of u32 range)
+Seed 128        -> period   4194304 (0.10% of u32 range)
+Seed 1025       -> period 536870912 (12.50% of u32 range)
+Seed 16807      -> period 536870912 (12.50% of u32 range)
+Seed 16806      -> period 268435456 (6.25% of u32 range)
+Seed 29147598   -> period 268435456 (6.25% of u32 range)

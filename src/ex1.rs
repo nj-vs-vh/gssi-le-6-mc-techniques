@@ -40,18 +40,24 @@ impl MLCG {
         self.step = 0;
     }
 
+    fn calculate_period(&mut self) -> usize {
+        self.reset();
+        for _ in self.into_iter() {} // exhausting the iterator
+        let period = self.step.to_owned();
+        self.reset();
+        return period;
+    }
+
     fn run_tests(mut self, name: &str) -> () {
-        println!("\n\nTesgin {}", name);
+        println!("\nTesting {}", name);
         self.reset();
 
         let mut timer = std::time::Instant::now();
-
-        for _ in &mut self {} // exhausting the iterator
-
+        let period = self.calculate_period();
         println!(
             "Full iteration: {} steps (log2(steps) = {}), took {:.2} seconds",
-            self.step,
-            (self.step as f32).log2(),
+            period,
+            (period as f64).log2(),
             timer.elapsed().as_secs_f32()
         );
 
@@ -89,7 +95,7 @@ impl MLCG {
                     name, log2_size, chi2_per_dof
                 ),
                 "u32 value",
-                &format!("pics/ex1/{}-2^{:.0}.png", name, log2_size),
+                &format!("out/ex1/{}-2^{:.0}.png", name, log2_size),
             )
             .expect("Failed to plot histogram");
         }
@@ -97,8 +103,33 @@ impl MLCG {
 }
 
 pub fn uniform_random_sampling() {
+    println!("\nEx 1: Uniform random sampling");
     MLCG::new(987654321, 663608941).run_tests("Simple MLCG");
     MLCG::new(10, 9).run_tests("Bad MLCG");
+
+    println!("\nEx 1.1: MINSTD algorithm");
+    for seed in [
+        1,
+        2,
+        3,
+        5,
+        16,
+        100,
+        128,
+        1025,
+        7u32.pow(5),
+        7u32.pow(5) - 1,
+        29147598,
+    ] {
+        let mut minstd = MLCG::new(seed, 16807);
+        let period = minstd.calculate_period();
+        println!(
+            "Seed {:<10} -> period {:>9} ({:.2}% of u32 range)",
+            seed,
+            period,
+            100.0 * (period as f64) / (u32::MAX as f64)
+        );
+    }
 }
 
 fn uniform_chi2_per_dof(
