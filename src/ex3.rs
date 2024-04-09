@@ -122,7 +122,7 @@ fn estimate_pi_error(rng: &mut ThreadRng) {
             "pi estimation",
             &format!("out/ex3/pi-est-distribution-{}-throws.png", total_throws),
             XLim::FromData,
-            Some(PI64),
+            Some(vec![PI64]),
         )
         .expect("Failed to plot histogram");
     }

@@ -6,13 +6,20 @@ pub enum XLim {
     Range(f64, f64),
 }
 
+impl XLim {
+    pub fn enlarged_range(min: f64, max: f64, enlarge: f64) -> XLim {
+        let range = max - min;
+        XLim::Range(min - range * enlarge, max + range * enlarge)
+    }
+}
+
 pub fn plot_histogram(
     hist: &dyn Hist<AxesTuple<(UniformNoFlow,)>, f64>,
     title: &str,
     x_caption: &str,
     filename: &str,
     xlim: XLim,
-    vertical_line: Option<f64>,
+    vertical_lines: Option<Vec<f64>>,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let hist_nonempty_bins = hist
         .iter()
@@ -66,13 +73,18 @@ pub fn plot_histogram(
                     ];
                 }),
             0.0,
-            RED.mix(0.6),
+            Palette9999::pick(0).mix(0.5),
         ))
         .unwrap();
-    if let Some(value) = vertical_line {
-        chart
-            .draw_series(LineSeries::new([(value, y_min), (value, y_max)], BLACK))
-            .unwrap();
+    if let Some(values) = vertical_lines {
+        for (idx, value) in values.into_iter().enumerate() {
+            chart
+                .draw_series(LineSeries::new(
+                    [(value, y_min), (value, y_max)],
+                    Palette9999::pick(idx + 1).stroke_width(2),
+                ))
+                .unwrap();
+        }
     }
 
     fig.present()?;
