@@ -186,7 +186,7 @@ fn plot_ndim_integral_mc_vs_midpoint(rng: &mut ThreadRng, integrand: Integrand) 
 pub fn ex5() {
     let mut rng = rand::thread_rng();
 
-    // plot_onedim_integral_mc_distributions(&mut rng);
+    plot_onedim_integral_mc_distributions(&mut rng);
     plot_ndim_integral_mc_vs_midpoint(&mut rng, Integrand::SquaresSum);
     plot_ndim_integral_mc_vs_midpoint(&mut rng, Integrand::ExpProduct);
 }

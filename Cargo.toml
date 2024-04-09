@@ -7,6 +7,7 @@ edition = "2021"
 
 [dependencies]
 clap = { version = "4.5.4", features = ["derive"] }
+half = { version = "2.4.1", features = ["num-traits"] }
 histogram = "0.10.0"
 itertools = "0.12.1"
 ndhistogram = "0.9.0"
