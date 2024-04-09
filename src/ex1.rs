@@ -1,4 +1,4 @@
-use crate::utils::plot_histogram::{plot_histogram, XLim};
+use crate::plot::{plot_histogram, XLim};
 use ndhistogram::{
     axis::{Axis, UniformNoFlow},
     ndhistogram, AxesTuple, Histogram, VecHistogram,

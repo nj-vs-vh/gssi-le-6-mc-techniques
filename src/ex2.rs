@@ -1,7 +1,7 @@
 use ndhistogram::{axis::UniformNoFlow, ndhistogram, Histogram};
 use rand::prelude::*;
 
-use crate::utils::plot_histogram::{plot_histogram, XLim};
+use crate::plot::{plot_histogram, XLim};
 
 fn plot_cauchy_dist() {
     let mut rng = rand::thread_rng();
