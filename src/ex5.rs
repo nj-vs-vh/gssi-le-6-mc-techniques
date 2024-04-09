@@ -16,14 +16,12 @@ fn onedim_mc_integration(rng: &mut ThreadRng, pow: i32, sample_count: usize) -> 
     func_mean // *(b - a), but in this case it's 1
 }
 
-pub fn ex5() {
-    let mut rng = rand::thread_rng();
-
+fn plot_onedim_mc_integration_distributions(rng: &mut ThreadRng) {
     for pow in [1, 2, 3, 4, 5] {
-        for sample_count in [1_000, 10_000, 50_000] {
+        for sample_count in [1_000, 10_000, 100_000] {
             let estimations_count = 10_000;
             let estimations = (0..estimations_count)
-                .map(|_| onedim_mc_integration(&mut rng, pow, sample_count))
+                .map(|_| onedim_mc_integration(rng, pow, sample_count))
                 .collect::<Vec<_>>();
             let (mu, sigma) = mean_std(&estimations);
             let k_est = sigma * (sample_count as f32).sqrt();
@@ -53,4 +51,10 @@ pub fn ex5() {
             .expect("Failed to plot histogram");
         }
     }
+}
+
+pub fn ex5() {
+    let mut rng = rand::thread_rng();
+
+    plot_onedim_mc_integration_distributions(&mut rng);
 }
