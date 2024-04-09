@@ -1,8 +1,6 @@
 use itertools::Itertools;
-use rand::prelude::*;
-use std::cmp::{max, min};
-
 use ndhistogram::{axis::UniformNoFlow, ndhistogram, Histogram};
+use rand::prelude::*;
 
 use crate::{
     plot::{plot_histogram, XLim},
@@ -18,7 +16,7 @@ fn onedim_mc_integral(rng: &mut ThreadRng, pow: i32, sample_count: usize) -> f32
     func_mean // *(b - a), but in this case it's 1
 }
 
-fn plot_onedim_mc_integration_distributions(rng: &mut ThreadRng) {
+fn plot_onedim_integral_mc_distributions(rng: &mut ThreadRng) {
     for pow in [1, 2, 3, 4, 5] {
         for sample_count in [1_000, 10_000, 100_000] {
             let estimations_count = 10_000;
@@ -55,18 +53,53 @@ fn plot_onedim_mc_integration_distributions(rng: &mut ThreadRng) {
     }
 }
 
-fn ndim_mc_integral(rng: &mut ThreadRng, ndim: usize, sample_count: usize) -> f32 {
+enum Integrand {
+    SquaresSum,
+    ExpProduct,
+}
+
+impl Integrand {
+    pub fn name(&self) -> &str {
+        match self {
+            Integrand::SquaresSum => "squares-sum",
+            Integrand::ExpProduct => "exp-product",
+        }
+    }
+
+    pub fn true_integral(&self, ndim: usize) -> f64 {
+        match self {
+            Integrand::SquaresSum => (ndim as f64) / 3.0,
+            Integrand::ExpProduct => (1.0 - 1.0 / std::f64::consts::E).powi(ndim as i32),
+        }
+    }
+
+    pub fn random_value(&self, rng: &mut ThreadRng, ndim: usize) -> f32 {
+        let random_point: Vec<f32> = (0..ndim).map(|_| rng.gen::<f32>()).collect();
+        self.value_at(random_point.iter())
+    }
+
+    pub fn value_at<'a>(&self, point: impl Iterator<Item = &'a f32>) -> f32 {
+        match self {
+            Integrand::SquaresSum => point.map(|coord| (*coord).powi(2)).sum::<f32>(),
+            Integrand::ExpProduct => point.map(|coord| (-*coord).exp()).product::<f32>(),
+        }
+    }
+}
+
+fn ndim_mc_integral(
+    rng: &mut ThreadRng,
+    ndim: usize,
+    sample_count: usize,
+    integrand: &Integrand,
+) -> f32 {
     let n = sample_count as f32;
     let func_mean = (0..sample_count)
-        .map(|_| {
-            let func_value = (0..ndim).map(|_| rng.gen::<f32>().powi(2)).sum::<f32>();
-            func_value / n
-        })
+        .map(|_| integrand.random_value(rng, ndim) / n)
         .sum::<f32>();
     func_mean // times hypercube volume, but in this case it's 1
 }
 
-fn ndim_midpoint_integral(ndim: usize, cells_per_dim: usize) -> f32 {
+fn ndim_midpoint_integral(ndim: usize, cells_per_dim: usize, integrand: &Integrand) -> f32 {
     let step = 1.0 / (cells_per_dim as f32);
     let cell_volume = step.powi(ndim as i32);
     let onedim_cell_centers = (0..cells_per_dim)
@@ -76,7 +109,7 @@ fn ndim_midpoint_integral(ndim: usize, cells_per_dim: usize) -> f32 {
         .map(|_| onedim_cell_centers.iter())
         .multi_cartesian_product();
     cell_centers
-        .map(|cell| cell_volume * cell.iter().map(|coord| (*coord).powi(2)).sum::<f32>())
+        .map(|cell| cell_volume * integrand.value_at(cell.into_iter()))
         .sum()
 }
 
@@ -95,24 +128,20 @@ fn integration_params(ndim: &usize) -> (usize, usize) {
     (cells_per_dim, cells_per_dim.pow(*ndim as u32))
 }
 
-pub fn ex5() {
-    let mut rng = rand::thread_rng();
-
-    plot_onedim_mc_integration_distributions(&mut rng);
-
+fn plot_ndim_integral_mc_vs_midpoint(rng: &mut ThreadRng, integrand: Integrand) {
     for ndim in 1..=8 {
         let (cells_per_dim, sample_count) = integration_params(&ndim);
         let mut timer = std::time::Instant::now();
-        let int_midpoint = ndim_midpoint_integral(ndim, cells_per_dim) as f64;
+        let int_midpoint = ndim_midpoint_integral(ndim, cells_per_dim, &integrand) as f64;
         println!(
             "Midpoint integration took {:.4} sec",
             timer.elapsed().as_secs_f32()
         );
 
-        let evals: usize = 100;
+        let evals: usize = 500;
         timer = std::time::Instant::now();
         let int_mc_evals: Vec<f32> = (0..evals)
-            .map(|_| ndim_mc_integral(&mut rng, ndim, sample_count))
+            .map(|_| ndim_mc_integral(rng, ndim, sample_count, &integrand))
             .collect();
 
         let time = timer.elapsed().as_secs_f32();
@@ -129,7 +158,7 @@ pub fn ex5() {
         for value in int_mc_evals {
             hist.fill(&(value as f64));
         }
-        let true_value = (ndim as f64) / 3.0;
+        let true_value = integrand.true_integral(ndim);
 
         plot_histogram(
             &hist,
@@ -138,7 +167,11 @@ pub fn ex5() {
                 ndim
             ),
             "integral value",
-            &format!("out/ex5/2/mc-vs-midpoint-{}-dim.png", ndim,),
+            &format!(
+                "out/ex5/2/{}-mc-vs-midpoint-{}-dim.png",
+                integrand.name(),
+                ndim
+            ),
             XLim::enlarged_range(
                 lo.min(true_value.min(int_midpoint)),
                 hi.max(true_value.max(int_midpoint)),
@@ -148,4 +181,12 @@ pub fn ex5() {
         )
         .expect("Failed to plot histogram");
     }
+}
+
+pub fn ex5() {
+    let mut rng = rand::thread_rng();
+
+    // plot_onedim_integral_mc_distributions(&mut rng);
+    plot_ndim_integral_mc_vs_midpoint(&mut rng, Integrand::SquaresSum);
+    plot_ndim_integral_mc_vs_midpoint(&mut rng, Integrand::ExpProduct);
 }
