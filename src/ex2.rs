@@ -54,7 +54,7 @@ pub fn ex2() {
         sample_circle_analytic(&mut rng);
     }
     println!("... done in {:.2} sec", timer.elapsed().as_secs_f32());
-    println!("Rejection method");
+    println!("Rejection method...");
     timer = std::time::Instant::now();
     for _ in 0..sample_size {
         sample_circle_rejection(&mut rng);
