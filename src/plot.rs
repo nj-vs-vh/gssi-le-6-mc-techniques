@@ -14,7 +14,14 @@ pub fn plot_histogram(
     xlim: XLim,
     vertical_line: Option<f64>,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    let hist_axis = hist.axes().as_tuple().0.to_owned();
+    let hist_nonempty_bins = hist
+        .iter()
+        .filter(|item| *item.value > 0.0)
+        .map(|item| item.bin)
+        .collect::<Vec<_>>();
+    if hist_nonempty_bins.is_empty() {
+        return Err("Hist is empty".into());
+    }
     let hist_max_count = hist.values().fold(f64::NEG_INFINITY, |a, &b| a.max(b));
     let y_min = 0.0;
     let y_max = hist_max_count * 1.05;
@@ -30,7 +37,10 @@ pub fn plot_histogram(
         .caption(title, ("sans-serif", 20))
         .build_cartesian_2d(
             match xlim {
-                XLim::FromData => hist_axis.low().to_owned()..hist_axis.high().to_owned(),
+                XLim::FromData => {
+                    hist_nonempty_bins.first().unwrap().start().unwrap()
+                        ..hist_nonempty_bins.last().unwrap().start().unwrap()
+                }
                 XLim::Range(low, high) => low..high,
             },
             y_min..y_max,
