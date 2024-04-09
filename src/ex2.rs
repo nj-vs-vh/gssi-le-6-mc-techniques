@@ -18,6 +18,7 @@ fn plot_cauchy_dist() {
         "x",
         "out/ex2/cauchy.png",
         XLim::Range(-10.0, 10.0),
+        Some(0.0),
     )
     .expect("Failed to plot histogram");
 }

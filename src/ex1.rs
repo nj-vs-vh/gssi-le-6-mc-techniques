@@ -97,6 +97,7 @@ impl MLCG {
                 "u32 value",
                 &format!("out/ex1/{}-2^{:.0}.png", name, log2_size),
                 XLim::FromData,
+                None,
             )
             .expect("Failed to plot histogram");
         }

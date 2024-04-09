@@ -12,9 +12,12 @@ pub fn plot_histogram(
     x_caption: &str,
     filename: &str,
     xlim: XLim,
+    vertical_line: Option<f64>,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let hist_axis = hist.axes().as_tuple().0.to_owned();
     let hist_max_count = hist.values().fold(f64::NEG_INFINITY, |a, &b| a.max(b));
+    let y_min = 0.0;
+    let y_max = hist_max_count * 1.05;
 
     let fig = BitMapBackend::new(filename, (640, 480)).into_drawing_area();
 
@@ -30,7 +33,7 @@ pub fn plot_histogram(
                 XLim::FromData => hist_axis.low().to_owned()..hist_axis.high().to_owned(),
                 XLim::Range(low, high) => low..high,
             },
-            0.0..(hist_max_count * 1.05),
+            y_min..y_max,
         )?;
 
     chart
@@ -56,6 +59,11 @@ pub fn plot_histogram(
             RED.mix(0.6),
         ))
         .unwrap();
+    if let Some(value) = vertical_line {
+        chart
+            .draw_series(LineSeries::new([(value, y_min), (value, y_max)], BLACK))
+            .unwrap();
+    }
 
     fig.present()?;
     println!("Histogram has been saved to {}", filename);
