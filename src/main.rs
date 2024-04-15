@@ -5,6 +5,7 @@ mod ex2;
 mod ex3;
 mod ex5;
 mod ex6;
+mod ex7;
 mod plot;
 mod utils;
 
@@ -24,6 +25,7 @@ fn main() {
         "3" => ex3::ex3(),
         "5" => ex5::ex5(),
         "6" => ex6::ex6(),
+        "7" => ex7::ex7(),
         _ => {
             println!("Exercise {:?} not found", args.exercise);
         }
