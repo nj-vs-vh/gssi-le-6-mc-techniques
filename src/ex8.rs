@@ -39,12 +39,13 @@ fn sample_compton_scattering(rng: &mut ThreadRng, k: &f32) -> ScatteredPhoton {
 
 pub fn ex8() {
     let mut rng = thread_rng();
-    for k in [0.1, 0.5, 1.0, 10.0, 100.0, 1000.0] {
+    for k in [0.01, 0.1, 0.5, 1.0, 10.0, 100.0, 1000.0] {
         plot_compton_scattering_sample(&mut rng, &k);
     }
 }
 
 fn plot_compton_scattering_sample(rng: &mut ThreadRng, k: &f32) {
+    let primary_energy_kev = k * 511.0;
     let costheta = (0..1000)
         .map(|i| 1.0 - 2.0 * (i as f32) / 1000.0)
         .collect_vec();
@@ -81,8 +82,8 @@ fn plot_compton_scattering_sample(rng: &mut ThreadRng, k: &f32) {
     plot_histogram(
         &theta_hist,
         &format!(
-            "Compton-scattered photon angles distribution (k = {:.2})",
-            k
+            "Compton-scattered photon angles distribution for E = {:.2} KeV",
+            primary_energy_kev,
         ),
         "theta",
         &format!("out/ex8/k={:.2}-theta-dist.png", k),
@@ -103,8 +104,8 @@ fn plot_compton_scattering_sample(rng: &mut ThreadRng, k: &f32) {
     plot_histogram(
         &energy_hist,
         &format!(
-            "Compton-scattered photon energy distribution (k = {:.2})",
-            k
+            "Compton-scattered photon energy distribution for E = {:.2} KeV",
+            primary_energy_kev
         ),
         "E_fin / E_in",
         &format!("out/ex8/k={:.2}-E-dist.png", k),
