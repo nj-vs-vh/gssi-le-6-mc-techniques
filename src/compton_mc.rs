@@ -97,14 +97,29 @@ fn mean_free_path(photon: &Photon, material: &Material) -> f32 {
             * compton_integral_cross_section(photon, material))
 }
 
-fn step(rng: &mut ThreadRng, photon: &mut Photon, material: &Material) -> bool {
+enum StepResult {
+    Continue,
+    ParticleExited,
+    ParticleRangedOut,
+}
+
+fn step(
+    rng: &mut ThreadRng,
+    photon: &mut Photon,
+    material: &Material,
+    min_energy: &f32,
+) -> StepResult {
+    // throwing out low-energy photons that would be absorbed through photoeffect
+    if photon.energy < *min_energy {
+        return StepResult::ParticleRangedOut;
+    }
     // moving to the next interaction point
     let lambda = mean_free_path(photon, material);
     let step_size = sample_exponential(rng, 1.0 / lambda);
     photon.direction.normalize();
     photon.r.add_inplace(&photon.direction.mult(step_size));
     if !material.geometry.is_inside(&photon.r) {
-        return false;
+        return StepResult::ParticleExited;
     }
     // simulating scattering
     let scattered_photon = sample_compton_scattering(rng, &photon.k());
@@ -131,10 +146,17 @@ fn step(rng: &mut ThreadRng, photon: &mut Photon, material: &Material) -> bool {
     photon.direction.y =
         sinphi * cosalpha * local_x + cosphi * local_y + sinphi * sinalpha * local_z;
     photon.direction.z = -sinalpha * local_x + cosalpha * local_z;
-    return true;
+    StepResult::Continue
 }
 
 pub fn run_compton_mc() {
+    _run_compton_mc(100, 0.0);
+    _run_compton_mc(10000, 0.01);
+    _run_compton_mc(10000, 1.0);
+}
+
+fn _run_compton_mc(total_photons: usize, min_energy: f32) {
+    let init_energy = 3.0 * 511.0; // KeV
     let material = Material {
         geometry: Cuboid {
             min: Vector3 {
@@ -156,9 +178,10 @@ pub fn run_compton_mc() {
     let mut rng = thread_rng();
 
     let mut traces: Vec<Vec<(f32, f32, f32)>> = Vec::new();
-    for _ in 0..10 {
+    let mut exited_photons: usize = 0;
+    for idx in 0..total_photons {
         let mut photon = Photon {
-            energy: 3.0 * 511.0,
+            energy: init_energy,
             r: Vector3 {
                 x: 0.0,
                 y: 0.0,
@@ -171,19 +194,35 @@ pub fn run_compton_mc() {
             },
         };
         let mut trace: Vec<Vector3> = Vec::new();
-        let mut tracing = true;
         trace.push(photon.r.clone());
-        while tracing {
-            tracing = step(&mut rng, &mut photon, &material);
+        loop {
+            let res = step(&mut rng, &mut photon, &material, &min_energy);
             trace.push(photon.r.clone());
+            if let StepResult::Continue = res {
+                continue;
+            }
+            if let StepResult::ParticleExited = res {
+                exited_photons += 1;
+            }
+            break;
         }
-        println!("Steps made: {}", trace.len());
+        println!("Particle #{} done in {} steps", idx, trace.len());
         traces.push(trace.into_iter().map(|r| (r.x, r.y, r.z)).collect());
     }
+    println!(
+        "Total particles exited from the material: {}",
+        exited_photons
+    );
 
     plot_lines_3d(
         traces,
-        "Compton-scattered photon trace",
+        &format!(
+            "Compton-scattered photons (E={:.1}, N={}, Emin={:.1}, absorbed {:.2}%)",
+            init_energy,
+            total_photons,
+            min_energy,
+            100.0 * (1.0 - (exited_photons as f32) / (total_photons as f32))
+        ),
         (
             AxLim::Range(
                 material.geometry.min.x as f64,
@@ -198,7 +237,7 @@ pub fn run_compton_mc() {
                 material.geometry.max.z as f64,
             ),
         ),
-        "out/compton/traces.png",
+        &format!("out/compton/traces-emin={:.2}.png", min_energy),
     )
     .expect("Failed to plot photon traces");
 }
