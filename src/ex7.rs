@@ -3,7 +3,7 @@ use rand::prelude::*;
 
 use crate::plot::plot_histogram;
 
-fn sample_exponential(rng: &mut ThreadRng, mu: f32) -> f32 {
+pub fn sample_exponential(rng: &mut ThreadRng, mu: f32) -> f32 {
     -(rng.gen::<f32>()).ln() / mu
 }
 
@@ -42,7 +42,7 @@ pub fn ex7() {
             &format!("Min of exponentials, method {}", idx + 1),
             "s = min(s1, s2)",
             &format!("out/ex7/sum-exp-sample-{}.png", idx + 1),
-            crate::plot::XLim::FromData,
+            crate::plot::AxLim::FromData,
             None,
         )
         .expect("Failed to plot histogram");

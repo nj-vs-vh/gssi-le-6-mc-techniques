@@ -3,7 +3,7 @@ use ndhistogram::{axis::UniformNoFlow, ndhistogram, Histogram};
 use rand::prelude::*;
 
 use crate::{
-    plot::{plot_histogram, XLim},
+    plot::{plot_histogram, AxLim},
     utils::mean_std,
 };
 
@@ -45,7 +45,7 @@ fn plot_onedim_integral_mc_distributions(rng: &mut ThreadRng) {
                     "out/ex5/1/x^{}-mc-integral-{}-samples.png",
                     pow, sample_count
                 ),
-                XLim::Range(lo, hi),
+                AxLim::Range(lo, hi),
                 Some(vec![true_value]),
             )
             .expect("Failed to plot histogram");
@@ -172,7 +172,7 @@ fn plot_ndim_integral_mc_vs_midpoint(rng: &mut ThreadRng, integrand: Integrand) 
                 integrand.name(),
                 ndim
             ),
-            XLim::enlarged_range(
+            AxLim::enlarged_range(
                 lo.min(true_value.min(int_midpoint)),
                 hi.max(true_value.max(int_midpoint)),
                 0.05,

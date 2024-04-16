@@ -1,5 +1,6 @@
 use clap::Parser;
 
+mod compton_mc;
 mod ex1;
 mod ex2;
 mod ex3;
@@ -28,6 +29,7 @@ fn main() {
         "6" => ex6::ex6(),
         "7" => ex7::ex7(),
         "8" => ex8::ex8(),
+        "compton" => compton_mc::run_compton_mc(),
         _ => {
             println!("Exercise {:?} not found", args.exercise);
         }

@@ -1,7 +1,7 @@
 use ndhistogram::{axis::UniformNoFlow, ndhistogram, Histogram};
 use rand::prelude::*;
 
-use crate::plot::{plot_histogram, XLim};
+use crate::plot::{plot_histogram, AxLim};
 
 fn plot_cauchy_dist() {
     let mut rng = rand::thread_rng();
@@ -17,7 +17,7 @@ fn plot_cauchy_dist() {
         "Cauchy distribution sample",
         "x",
         "out/ex2/cauchy.png",
-        XLim::Range(-10.0, 10.0),
+        AxLim::Range(-10.0, 10.0),
         Some(vec![0.0]),
     )
     .expect("Failed to plot histogram");

@@ -17,12 +17,12 @@ fn klein_nishina_cross_section(costheta: &f32, k: &f32) -> f32 {
     0.5 * e_ratio.powi(2) * (e_ratio + (1.0 / e_ratio) - (1.0 - costheta.powi(2)))
 }
 
-struct ScatteredPhoton {
+pub struct ScatteredPhoton {
     pub theta: f32,
     pub energy_ratio: f32,
 }
 
-fn sample_compton_scattering(rng: &mut ThreadRng, k: &f32) -> ScatteredPhoton {
+pub fn sample_compton_scattering(rng: &mut ThreadRng, k: &f32) -> ScatteredPhoton {
     let costheta = loop {
         // sampling in cos(theta) space, so no need for sin(theta) jacobian
         let costheta_try = 1.0 - 2.0 * rng.gen::<f32>();
@@ -87,7 +87,7 @@ fn plot_compton_scattering_sample(rng: &mut ThreadRng, k: &f32) {
         ),
         "theta",
         &format!("out/ex8/k={:.2}-theta-dist.png", k),
-        crate::plot::XLim::FromData,
+        crate::plot::AxLim::FromData,
         None,
     )
     .expect("Failed to plot theta histogram");
@@ -109,7 +109,7 @@ fn plot_compton_scattering_sample(rng: &mut ThreadRng, k: &f32) {
         ),
         "E_fin / E_in",
         &format!("out/ex8/k={:.2}-E-dist.png", k),
-        crate::plot::XLim::FromData,
+        crate::plot::AxLim::FromData,
         None,
     )
     .expect("Failed to plot E histogram");

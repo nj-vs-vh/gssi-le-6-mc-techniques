@@ -1,4 +1,4 @@
-use crate::{plot::XLim, utils::mean_std};
+use crate::{plot::AxLim, utils::mean_std};
 use ndhistogram::{axis::UniformNoFlow, ndhistogram, Histogram};
 use rand::prelude::*;
 
@@ -121,7 +121,7 @@ fn estimate_pi_error(rng: &mut ThreadRng) {
             ),
             "pi estimation",
             &format!("out/ex3/pi-est-distribution-{}-throws.png", total_throws),
-            XLim::FromData,
+            AxLim::FromData,
             Some(vec![PI64]),
         )
         .expect("Failed to plot histogram");
