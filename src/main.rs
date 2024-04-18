@@ -1,3 +1,5 @@
+#[macro_use]
+extern crate bmp;
 use clap::Parser;
 
 mod compton_mc;
@@ -21,6 +23,7 @@ struct CliArgs {
 
 fn main() {
     let args = CliArgs::parse();
+
     match args.exercise.as_str() {
         "1" => ex1::ex1(),
         "2" => ex2::ex2(),
