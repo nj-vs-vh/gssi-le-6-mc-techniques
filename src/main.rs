@@ -32,7 +32,7 @@ fn main() {
         "6" => ex6::ex6(),
         "7" => ex7::ex7(),
         "8" => ex8::ex8(),
-        "compton" => compton_mc::run_compton_mc(),
+        "compton" => compton_mc::main(),
         _ => {
             println!("Exercise {:?} not found", args.exercise);
         }

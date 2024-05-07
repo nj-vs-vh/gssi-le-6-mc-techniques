@@ -155,18 +155,18 @@ fn compton_mc_step(
     StepResult::Continue
 }
 
-pub fn run_compton_mc() {
+pub fn main() {
     // no absorption = photons do a long random walk before going out
-    _run_compton_mc(100, 500.0, 0.0);
+    run_compton_mc(100, 500.0, 0.0);
     // more or less realistic
-    _run_compton_mc(1_000_000, 200.0, 1.0);
-    _run_compton_mc(1_000_000, 800.0, 1.0);
-    _run_compton_mc(1_000_000, 3200.0, 1.0);
-    _run_compton_mc(1_000_000, 6400.0, 1.0);
-    _run_compton_mc(1_000_000, 12800.0, 1.0);
+    run_compton_mc(1_000_000, 200.0, 1.0);
+    run_compton_mc(1_000_000, 800.0, 1.0);
+    run_compton_mc(1_000_000, 3200.0, 1.0);
+    run_compton_mc(1_000_000, 6400.0, 1.0);
+    run_compton_mc(1_000_000, 12800.0, 1.0);
 }
 
-fn _run_compton_mc(total_photons: usize, initial_energy: f32, min_energy: f32) {
+fn run_compton_mc(total_photons: usize, initial_energy: f32, min_energy: f32) {
     let material = Material {
         geometry: Cuboid {
             min: Vector3 {
@@ -175,7 +175,7 @@ fn _run_compton_mc(total_photons: usize, initial_energy: f32, min_energy: f32) {
                 z: -2.0,
             },
             max: Vector3 {
-                x: 10.0,
+                x: 4.0,
                 y: 2.0,
                 z: 2.0,
             },
@@ -291,11 +291,7 @@ fn _run_compton_mc(total_photons: usize, initial_energy: f32, min_energy: f32) {
             ))
             .unwrap()
             .clone() as f32;
-        let pixel_intensity = if pixel_count == 0.0 {
-            pixel_count
-        } else {
-            pixel_count.ln() / max_bin_count.ln()
-        };
+        let pixel_intensity = (1.0 + pixel_count).ln() / (1.0 + max_bin_count).ln();
         let pixel_value = (255.0 * pixel_intensity) as u32;
         img.set_pixel(y_px, z_px, px!(pixel_value, pixel_value, pixel_value));
     }
