@@ -1,0 +1,10 @@
+sampling with method #0 took 0.021 sec
+Histogram has been saved to out/ex7/sum-exp-sample-1.png
+sampling with method #1 took 0.011 sec
+Histogram has been saved to out/ex7/sum-exp-sample-2.png
+process #0: 4.787% of samples, 100*mu_i/mu = 4.7619047
+process #1: 9.556% of samples, 100*mu_i/mu = 9.523809
+process #2: 14.226% of samples, 100*mu_i/mu = 14.285714
+process #3: 19.068% of samples, 100*mu_i/mu = 19.047619
+process #4: 23.855% of samples, 100*mu_i/mu = 23.809525
+process #5: 28.508% of samples, 100*mu_i/mu = 28.571428
