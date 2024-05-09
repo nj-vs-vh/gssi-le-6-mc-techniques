@@ -16,7 +16,7 @@ struct MCG<T: Integer + Display + WrappingMul + Copy> {
     // Multiplicative Congruential Generator
     init: T,
     mult: T,
-    modulus: Modulus<T>, // None = use u32::MAX
+    modulus: Modulus<T>,
 
     // generator state
     current: T,
