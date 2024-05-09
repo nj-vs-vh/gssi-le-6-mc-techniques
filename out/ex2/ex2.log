@@ -3,6 +3,9 @@ Histogram has been saved to out/ex2/cauchy.png
 
 Sampling 100000000 points inside the unit circle
 Analytic method...
-... done in 1.05 sec
+... done in 1.08 sec
 Rejection method...
-... done in 1.91 sec
+... done in 1.95 sec
+
+
+Total runtime: 3.05 sec

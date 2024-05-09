@@ -1,0 +1,22 @@
+Thrown 5000000 points, recorded 500 pi estimation(s)
+Thrown 5000000 points, recorded 500 pi estimation(s)
+Thrown 5000000 points, recorded 500 pi estimation(s)
+Plot has been saved to out/ex3/pi.png
+Sample moments: 3.139188e0 +/- 2.3990864e-1, k = sigma*sqrt(N) = 1.69641
+Histogram params for 50 throws: range 1.7274..4.5558, 35 bins
+Histogram has been saved to out/ex3/pi-est-distribution-50-throws.png
+Sample moments: 3.140801e0 +/- 1.17763884e-1, k = sigma*sqrt(N) = 1.17764
+Histogram params for 100 throws: range 2.1416..4.1416, 50 bins
+Histogram has been saved to out/ex3/pi-est-distribution-100-throws.png
+Sample moments: 3.1418881e0 +/- 4.7691856e-2, k = sigma*sqrt(N) = 1.06642
+Histogram params for 500 throws: range 2.6944..3.5888, 111 bins
+Histogram has been saved to out/ex3/pi-est-distribution-500-throws.png
+Sample moments: 3.1414034e0 +/- 6.4998284e-2, k = sigma*sqrt(N) = 2.05543
+Histogram params for 1000 throws: range 2.8254..3.4578, 158 bins
+Histogram has been saved to out/ex3/pi-est-distribution-1000-throws.png
+Sample moments: 3.1415582e0 +/- 2.1306079e-2, k = sigma*sqrt(N) = 1.50657
+Histogram params for 5000 throws: range 3.0002..3.2830, 353 bins
+Histogram has been saved to out/ex3/pi-est-distribution-5000-throws.png
+
+
+Total runtime: 5.93 sec

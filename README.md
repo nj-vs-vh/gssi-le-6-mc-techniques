@@ -320,3 +320,329 @@ Again, MINST is an MCG with multiplier $M = 7^5 = 16807$, but $N$ is not a Merse
 This requires one to use 64-bit integer type and perform modulus operation explicitly. But for that we
 get a longer sequence, spanning the full range of $2^{31} - 1$, and this seems to happen irrespective
 of the seed (initial value).
+
+## Ex. 2: Random sampling
+
+
+
+<details>
+<summary>Source code</summary>
+
+```rust
+use ndhistogram::{axis::UniformNoFlow, ndhistogram, Histogram};
+use rand::prelude::*;
+
+use crate::plot::{plot_histogram, AxLim};
+
+fn plot_cauchy_dist() {
+    let mut rng = rand::thread_rng();
+    let sample_size = 10000;
+    let sample: Vec<f64> = (0..sample_size)
+        // inverse CDF C^-1(t) = tan(pi*(t - 1/2))
+        .map(|_| (std::f64::consts::PI * (rng.gen::<f64>() - 0.5)).tan())
+        .collect();
+    let mut hist = ndhistogram!(UniformNoFlow::new(100, -10.0, 10.0));
+    sample.iter().map(|s| hist.fill(s)).count();
+    plot_histogram(
+        &hist,
+        "Cauchy distribution sample",
+        "x",
+        "out/ex2/cauchy.png",
+        AxLim::Range(-10.0, 10.0),
+        Some(vec![0.0]),
+    )
+    .expect("Failed to plot histogram");
+}
+
+const TWO_PI: f32 = 2.0 * std::f32::consts::PI;
+
+fn sample_circle_analytic(rng: &mut ThreadRng) -> (f32, f32) {
+    let t1: f32 = rng.gen();
+    let t2: f32 = rng.gen();
+    let sqrt_t1 = t1.sqrt();
+    return (sqrt_t1 * (TWO_PI * t2).cos(), sqrt_t1 * (TWO_PI * t2).sin());
+}
+
+fn sample_circle_rejection(rng: &mut ThreadRng) -> (f32, f32) {
+    loop {
+        let x = 2.0 * rng.gen::<f32>() - 1.0;
+        let y = 2.0 * rng.gen::<f32>() - 1.0;
+        if x.powi(2) + y.powi(2) <= 1.0 {
+            return (x, y);
+        }
+    }
+}
+
+pub fn ex2() {
+    println!("Plotting Cauchy distribution sample");
+    plot_cauchy_dist();
+
+    let sample_size = 100_000_000;
+    let mut rng = rand::thread_rng();
+    println!("\nSampling {} points inside the unit circle", sample_size);
+    println!("Analytic method...");
+    let mut timer = std::time::Instant::now();
+    for _ in 0..sample_size {
+        sample_circle_analytic(&mut rng);
+    }
+    println!("... done in {:.2} sec", timer.elapsed().as_secs_f32());
+    println!("Rejection method...");
+    timer = std::time::Instant::now();
+    for _ in 0..sample_size {
+        sample_circle_rejection(&mut rng);
+    }
+    println!("... done in {:.2} sec", timer.elapsed().as_secs_f32());
+}
+
+```
+
+</details>
+
+
+
+
+<details>
+<summary>Execution log</summary>
+
+```
+Plotting Cauchy distribution sample
+Histogram has been saved to out/ex2/cauchy.png
+
+Sampling 100000000 points inside the unit circle
+Analytic method...
+... done in 1.08 sec
+Rejection method...
+... done in 1.95 sec
+
+
+Total runtime: 3.05 sec
+
+```
+
+</details>
+
+
+
+### Ex. 2.1: Inversion
+
+Inverted CDF for Cauchy distribution is: $C^{-1}(t) = \tan(\pi (t - \frac{1}{2}))$.
+
+Using it, we obtain a sample:
+
+![cauchy-hist](out/ex2/cauchy.png)
+
+### Ex. 2.2: Inversion and rejection
+
+In principle, the result could depend on compiler optimizations. In Rust, optimizations are
+controlled by `--release` flag. Both with and without this flag the analytic method works
+faster, at least on my machine, but optimization makes the lead more pronounced:
+
+|                             	| Analytic 	| Rejection 	|
+|-----------------------------	|----------	|-----------	|
+| Debug build (non-optimized) 	| 52.78    	| 65.49     	|
+| Release build (optimized)   	| 1.07     	| 1.94      	|
+
+
+## Ex. 3: Numerical estimation of $\pi$
+
+
+
+<details>
+<summary>Source code</summary>
+
+```rust
+use crate::{plot::AxLim, utils::mean_std};
+use ndhistogram::{axis::UniformNoFlow, ndhistogram, Histogram};
+use rand::prelude::*;
+
+use crate::plot::{plot_histogram, plot_lines, Line};
+
+const PI32: f32 = std::f32::consts::PI;
+const PI64: f64 = std::f64::consts::PI;
+
+fn throw_into_circle(rng: &mut ThreadRng) -> bool {
+    let x = 2.0 * rng.gen::<f32>() - 1.0;
+    let y = 2.0 * rng.gen::<f32>() - 1.0;
+    return (x.powi(2) + y.powi(2)) < 1.0;
+}
+
+fn estimate_pi(thrown_inside: usize, thrown_total: usize) -> f32 {
+    4.0 * (thrown_inside as f32 / thrown_total as f32)
+}
+
+fn produce_pi_series(
+    rng: &mut ThreadRng,
+    total_steps: usize,
+    record_each: Option<usize>,
+    logging: bool,
+) -> Vec<(f32, f32)> {
+    let mut pi_estimates: Vec<(f32, f32)> = Vec::new();
+    let mut thrown_inside: usize = 0;
+    for step in 1..total_steps + 1 {
+        if throw_into_circle(rng) {
+            thrown_inside += 1;
+        }
+        if let Some(record_each) = record_each {
+            if step % record_each == 0 {
+                let logstep = (step as f32).log10();
+                pi_estimates.push((logstep, estimate_pi(thrown_inside, step)))
+            }
+        }
+    }
+
+    if record_each.is_none() {
+        pi_estimates.push((
+            (total_steps as f32).log10(),
+            estimate_pi(thrown_inside, total_steps),
+        ));
+    }
+    if logging {
+        println!(
+            "Thrown {} points, recorded {} pi estimation(s)",
+            total_steps,
+            pi_estimates.len()
+        );
+    }
+    pi_estimates
+}
+
+fn plot_pi_series(rng: &mut ThreadRng) {
+    let steps_total: usize = 5_000_000;
+    let record_each: usize = 10_000;
+    let pi_samples: Vec<Vec<(f32, f32)>> = (0..3)
+        .map(|_| produce_pi_series(rng, steps_total, Some(record_each), true))
+        .collect();
+
+    plot_lines(
+        pi_samples
+            .into_iter()
+            .enumerate()
+            .map(|(idx, pi_series)| Line {
+                data: pi_series
+                    .iter()
+                    .map(|(logstep, pi_est)| (*logstep, (PI32 - pi_est).abs().log10()))
+                    .collect(),
+                label: format!("Run #{}", idx),
+            })
+            .collect(),
+        "Pi value estimation convergence",
+        "log_10(step)",
+        "log_10(|error|)",
+        "out/ex3/pi.png",
+    )
+    .expect("Failed to plot line");
+}
+
+fn estimate_pi_error(rng: &mut ThreadRng) {
+    for total_throws in [50, 100, 500, 1000, 5000] {
+        let sample_size = 1_000_000 * 100 / total_throws; // to keep time reasonable
+        let pi_est_sample: Vec<f32> = (0..sample_size)
+            .map(|_| {
+                produce_pi_series(rng, total_throws, None, false)
+                    .last()
+                    .unwrap()
+                    .1
+            })
+            .collect();
+
+        let (mu, sigma) = mean_std(&pi_est_sample);
+        let k_est = sigma * (total_throws as f32).sqrt();
+        println!(
+            "Sample moments: {:e} +/- {:e}, k = sigma*sqrt(N) = {:.5}",
+            mu, sigma, k_est,
+        );
+
+        let sqrt_throws = (total_throws as f64).sqrt();
+        // 10 / sqrt(N) scaling is ad hoc
+        let low = PI64 - 10.0 / sqrt_throws;
+        let high = PI64 + 10.0 / sqrt_throws;
+        // it makes no sense to make more bins than max precision, limited by total throws
+        let bins = ((high - low) * total_throws as f64 / 4.0) as usize;
+        println!(
+            "Histogram params for {} throws: range {:.4}..{:.4}, {} bins",
+            total_throws, low, high, bins
+        );
+        let mut hist = ndhistogram!(UniformNoFlow::new(bins, low, high));
+        for value in pi_est_sample {
+            hist.fill(&(value as f64));
+        }
+        plot_histogram(
+            &hist,
+            &format!(
+                "Pi estimations for {} throws, sample of {}: {:.3} +/- {:.3}, k = {:.3}",
+                total_throws, sample_size, mu, sigma, k_est,
+            ),
+            "pi estimation",
+            &format!("out/ex3/pi-est-distribution-{}-throws.png", total_throws),
+            AxLim::FromData,
+            Some(vec![PI64]),
+        )
+        .expect("Failed to plot histogram");
+    }
+}
+
+pub fn ex3() {
+    let mut rng = rand::thread_rng();
+    plot_pi_series(&mut rng);
+    estimate_pi_error(&mut rng);
+}
+
+```
+
+</details>
+
+
+
+
+<details>
+<summary>Execution log</summary>
+
+```
+Thrown 5000000 points, recorded 500 pi estimation(s)
+Thrown 5000000 points, recorded 500 pi estimation(s)
+Thrown 5000000 points, recorded 500 pi estimation(s)
+Plot has been saved to out/ex3/pi.png
+Sample moments: 3.139188e0 +/- 2.3990864e-1, k = sigma*sqrt(N) = 1.69641
+Histogram params for 50 throws: range 1.7274..4.5558, 35 bins
+Histogram has been saved to out/ex3/pi-est-distribution-50-throws.png
+Sample moments: 3.140801e0 +/- 1.17763884e-1, k = sigma*sqrt(N) = 1.17764
+Histogram params for 100 throws: range 2.1416..4.1416, 50 bins
+Histogram has been saved to out/ex3/pi-est-distribution-100-throws.png
+Sample moments: 3.1418881e0 +/- 4.7691856e-2, k = sigma*sqrt(N) = 1.06642
+Histogram params for 500 throws: range 2.6944..3.5888, 111 bins
+Histogram has been saved to out/ex3/pi-est-distribution-500-throws.png
+Sample moments: 3.1414034e0 +/- 6.4998284e-2, k = sigma*sqrt(N) = 2.05543
+Histogram params for 1000 throws: range 2.8254..3.4578, 158 bins
+Histogram has been saved to out/ex3/pi-est-distribution-1000-throws.png
+Sample moments: 3.1415582e0 +/- 2.1306079e-2, k = sigma*sqrt(N) = 1.50657
+Histogram params for 5000 throws: range 3.0002..3.2830, 353 bins
+Histogram has been saved to out/ex3/pi-est-distribution-5000-throws.png
+
+
+Total runtime: 5.93 sec
+
+```
+
+</details>
+
+
+
+To check the convergence, I plot the logarithm of absolute estimation error
+vs. the number of throws. All traces converge (error decreases), but rather
+slowly and with large fluctuations.
+
+![pi-throws](out/ex3/pi.png)
+
+
+### Ex. 3.1: Uncertainty evaluation
+
+To estimate the error, we can fix the number of throws $N$ and repeat the procedure to get the
+distribution of the $\pi$ estimate. From it, we obtain the estimation of $\sigma$ and get the
+scaling factor $k \equiv \sigma \sqrt{N}$, which turns out to be around 1-2, although it fluctuates
+significantly and seems to depend on the number of throws.
+
+![pi-est-1](out/ex3/pi-est-distribution-50-throws.png)
+![pi-est-2](out/ex3/pi-est-distribution-100-throws.png)
+![pi-est-3](out/ex3/pi-est-distribution-500-throws.png)
+![pi-est-4](out/ex3/pi-est-distribution-1000-throws.png)
+![pi-est-5](out/ex3/pi-est-distribution-5000-throws.png)

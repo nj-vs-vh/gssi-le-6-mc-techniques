@@ -58,3 +58,53 @@ Again, MINST is an MCG with multiplier $M = 7^5 = 16807$, but $N$ is not a Merse
 This requires one to use 64-bit integer type and perform modulus operation explicitly. But for that we
 get a longer sequence, spanning the full range of $2^{31} - 1$, and this seems to happen irrespective
 of the seed (initial value).
+
+## Ex. 2: Random sampling
+
+!include[Source code](src/ex2.rs)(rust)
+!include[Execution log](out/ex2/ex2.log)
+
+### Ex. 2.1: Inversion
+
+Inverted CDF for Cauchy distribution is: $C^{-1}(t) = \tan(\pi (t - \frac{1}{2}))$.
+
+Using it, we obtain a sample:
+
+![cauchy-hist](out/ex2/cauchy.png)
+
+### Ex. 2.2: Inversion and rejection
+
+In principle, the result could depend on compiler optimizations. In Rust, optimizations are
+controlled by `--release` flag. Both with and without this flag the analytic method works
+faster, at least on my machine, but optimization makes the lead more pronounced:
+
+|                             	| Analytic 	| Rejection 	|
+|-----------------------------	|----------	|-----------	|
+| Debug build (non-optimized) 	| 52.78    	| 65.49     	|
+| Release build (optimized)   	| 1.07     	| 1.94      	|
+
+
+## Ex. 3: Numerical estimation of $\pi$
+
+!include[Source code](src/ex3.rs)(rust)
+!include[Execution log](out/ex3/ex3.log)
+
+To check the convergence, I plot the logarithm of absolute estimation error
+vs. the number of throws. All traces converge (error decreases), but rather
+slowly and with large fluctuations.
+
+![pi-throws](out/ex3/pi.png)
+
+
+### Ex. 3.1: Uncertainty evaluation
+
+To estimate the error, we can fix the number of throws $N$ and repeat the procedure to get the
+distribution of the $\pi$ estimate. From it, we obtain the estimation of $\sigma$ and get the
+scaling factor $k \equiv \sigma \sqrt{N}$, which turns out to be around 1-2, although it fluctuates
+significantly and seems to depend on the number of throws.
+
+![pi-est-1](out/ex3/pi-est-distribution-50-throws.png)
+![pi-est-2](out/ex3/pi-est-distribution-100-throws.png)
+![pi-est-3](out/ex3/pi-est-distribution-500-throws.png)
+![pi-est-4](out/ex3/pi-est-distribution-1000-throws.png)
+![pi-est-5](out/ex3/pi-est-distribution-5000-throws.png)
