@@ -244,6 +244,7 @@ f_s(x) = f_{s_1}(x) (1 - C_{s_2}(x)) + f_{s_2}(x) (1 - C_{s_1}(x))
 $$
 
 Now, considering the case of interest $s_{1, 2} = \mathrm{Exp}(\mu_{1, 2})$, we get
+
 $$
 f_s(x) =
 \mu_1 e^{-\mu_1 x} \cdot e^{-\mu_2 x} + \mu_2 e^{-\mu_2 x} \cdot e^{-\mu_1 x} =
@@ -253,6 +254,7 @@ $$
 And it follows that $s \sim \mathrm{Exp}(\mu_1 + \mu_2)$
 
 For a more general proof, we can either do it inductively, or write in more general form
+
 $$
 \begin{aligned}
 f_s(x) &= \sum_i f_{s_i}(x) \prod_{j, j \ne i} (1 - C_{s_j}(x)) \\
@@ -290,6 +292,7 @@ process #5: 28.508% of samples, 100*mu_i/mu = 28.571428
 
 To rigorously prove this, consider a set of exponential random variables
 $s_i = \mathrm{Exp}(\mu_i)$ and compute the probability for the $i$th value to be the smallest one
+
 $$
 \begin{aligned}
 P(s_i < s_j, j \ne i)
