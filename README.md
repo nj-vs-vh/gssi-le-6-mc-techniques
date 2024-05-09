@@ -1035,3 +1035,476 @@ the integral.
 </details>
 
 
+## Ex. 6: Truncation errors
+
+
+
+<details>
+<summary>Source code</summary>
+
+```rust
+use num::{cast, Float};
+
+fn sum_inverse<F: Float>(n: usize) -> F {
+    let n_float: F = cast(n).unwrap();
+    let one: F = cast(1.0).unwrap();
+    (0..n)
+        .map(|_| one.div(n_float))
+        .fold(cast(0.0).unwrap(), |acc, v| acc + v)
+}
+
+pub fn ex6() {
+    println!(
+        "{:>8} | {:<12} | {:<12} | {:<12}",
+        "n", "half (f16)", "single (f32)", "double (f64)",
+    );
+    for n in [100, 1000, 10_000, 100_000, 1_000_000] {
+        println!(
+            "{:>8} | {:<12} | {:<12} | {:<12}",
+            n,
+            sum_inverse::<half::f16>(n),
+            sum_inverse::<f32>(n),
+            sum_inverse::<f64>(n),
+        );
+    }
+}
+
+```
+
+</details>
+
+
+
+
+<details>
+<summary>Execution log</summary>
+
+```
+       n | half (f16)   | single (f32) | double (f64)
+     100 | 0.98828125   | 0.99999934   | 1.0000000000000007
+    1000 | 0.9785156    | 0.9999907    | 1.0000000000000007
+   10000 | 0.25         | 1.0000535    | 0.9999999999999062
+  100000 | 0            | 1.0009902    | 0.9999999999980838
+ 1000000 | 0            | 1.0090389    | 1.000000000007918
+
+```
+
+</details>
+
+
+
+In addition to single and double precision floats (correspondingly `f32` and `f64` in Rust)
+I've tried half-precison 16-bit float:
+
+| n | half (f16)   | single (f32) | double (f64)|
+| --- | --- | --- | --- |
+| 100 | 0.98828125   | 0.99999934   | 1.0000000000000007|
+| 1000 | 0.9785156    | 0.9999907    | 1.0000000000000007|
+| 10000 | 0.25         | 1.0000535    | 0.9999999999999062|
+| 100000 | 0            | 1.0009902    | 0.9999999999980838|
+| 1000000 | 0            | 1.0090389    | 1.000000000007918|
+
+
+## Ex. 7: Tracking algorithms
+
+
+
+<details>
+<summary>Source code</summary>
+
+```rust
+use ndhistogram::{axis::UniformNoFlow, ndhistogram, Histogram};
+use rand::prelude::*;
+
+use crate::plot::plot_histogram;
+
+pub fn sample_exponential(rng: &mut ThreadRng, mu: f32) -> f32 {
+    -(rng.gen::<f32>()).ln() / mu
+}
+
+fn sample_min_exponential1(rng: &mut ThreadRng, mu1: f32, mu2: f32) -> f32 {
+    sample_exponential(rng, mu1).min(sample_exponential(rng, mu2))
+}
+
+fn sample_min_exponential2(rng: &mut ThreadRng, mu1: f32, mu2: f32) -> f32 {
+    sample_exponential(rng, mu1 + mu2)
+}
+
+pub fn ex7() {
+    let mut rng = thread_rng();
+    let mu1 = 1.0;
+    let mu2 = 2.0;
+
+    let sample_size = 1_000_000;
+
+    for (idx, func) in [sample_min_exponential1, sample_min_exponential2]
+        .into_iter()
+        .enumerate()
+    {
+        let time = std::time::Instant::now();
+        let mut hist = ndhistogram!(UniformNoFlow::new(100, 0.0, 3.0));
+        for _ in 0..sample_size {
+            hist.fill(&(func(&mut rng, mu1, mu2) as f64));
+        }
+        println!(
+            "sampling with method #{} took {:.3} sec",
+            idx,
+            time.elapsed().as_secs_f32()
+        );
+
+        plot_histogram(
+            &hist,
+            &format!("Min of exponentials, method {}", idx + 1),
+            "s = min(s1, s2)",
+            &format!("out/ex7/sum-exp-sample-{}.png", idx + 1),
+            crate::plot::AxLim::FromData,
+            None,
+        )
+        .expect("Failed to plot histogram");
+    }
+
+    let mu_process = [1.0, 2.0, 3.0, 4.0, 5.0, 6.0];
+    let mut counts = Vec::<usize>::new();
+    (0..mu_process.len()).for_each(|_| counts.push(0));
+    let sample_size = 1_000_000;
+    for _ in 0..sample_size {
+        let (argmin, _) = mu_process
+            .iter()
+            .map(|mu_i| sample_exponential(&mut rng, *mu_i))
+            .enumerate()
+            .fold(
+                (None, std::f32::INFINITY),
+                |(argmin, min), (idx, current)| {
+                    if current < min {
+                        (Some(idx), current)
+                    } else {
+                        (argmin, min)
+                    }
+                },
+            );
+        if let Some(argmin) = argmin {
+            counts[argmin] += 1;
+        }
+    }
+
+    let mu = mu_process.iter().sum::<f32>();
+    for (idx, (count, mu_i)) in counts.into_iter().zip(mu_process.iter()).enumerate() {
+        println!(
+            "process #{}: {:.3}% of samples, 100*mu_i/mu = {:3}",
+            idx,
+            100.0 * (count as f32) / (sample_size as f32),
+            100.0 * mu_i / mu,
+        )
+    }
+}
+
+```
+
+</details>
+
+
+
+
+<details>
+<summary>Execution log</summary>
+
+```
+sampling with method #0 took 0.021 sec
+Histogram has been saved to out/ex7/sum-exp-sample-1.png
+sampling with method #1 took 0.011 sec
+Histogram has been saved to out/ex7/sum-exp-sample-2.png
+process #0: 4.787% of samples, 100*mu_i/mu = 4.7619047
+process #1: 9.556% of samples, 100*mu_i/mu = 9.523809
+process #2: 14.226% of samples, 100*mu_i/mu = 14.285714
+process #3: 19.068% of samples, 100*mu_i/mu = 19.047619
+process #4: 23.855% of samples, 100*mu_i/mu = 23.809525
+process #5: 28.508% of samples, 100*mu_i/mu = 28.571428
+
+```
+
+</details>
+
+
+
+### Proof
+
+Consider two random variables $s_{1}$, $s_2$ and the random variable
+$s \equiv \min(s_1, s_2)$. We need to find the disribution of $s$.
+
+By definition, $s$ takes the smalles value of the $s_1, s_2$ pair.
+Therefore, for $s$ to have a particular value $x$ requires either $s_1$ to be equal to $x$
+and $s_2$ to be greater than $s_1$, or vice versa. We can write it as
+
+$$
+P(s \in (x, x + dx)) = P(s_1 \in (x, x + dx)) P( s_2 > x ) + P(s_2 \in (x, x + dx)) P( s_1 > x )
+$$
+
+Denoting PDF as $f$ and CDF as $C$, we write
+
+$$
+f_s(x) = f_{s_1}(x) (1 - C_{s_2}(x)) + f_{s_2}(x) (1 - C_{s_1}(x))
+$$
+
+Now, considering the case of interest $s_{1, 2} = \mathrm{Exp}(\mu_{1, 2})$, we get
+$$
+f_s(x) =
+\mu_1 e^{-\mu_1 x} \cdot e^{-\mu_2 x} + \mu_2 e^{-\mu_2 x} \cdot e^{-\mu_1 x} =
+(\mu_1 + \mu_2) e^{-(\mu_1 + \mu_2)x}
+$$
+
+And it follows that $s \sim \mathrm{Exp}(\mu_1 + \mu_2)$
+
+For a more general proof, we can either do it inductively, or write in more general form
+$$
+\begin{aligned}
+f_s(x) &= \sum_i f_{s_i}(x) \prod_{j, j \ne i} (1 - C_{s_j}(x)) \\
+&= \sum_i \mu_i e^{-\mu_i x} \prod_{j, j \ne i} e^{-\mu_j x} \\
+&= \sum_i \mu_i e^{-\mu_i x}  e^{- \left(\sum_{j, j \ne i} \mu_j \right) x} \\
+&= \sum_i \mu_i e^{- \left(\mu_i + \sum_{j, j \ne i} \mu_j \right) x} \\
+&= \sum_i \mu_i e^{- \left(\sum_{j} \mu_j \right) x} \\
+&= \left( \sum_i \mu_i \right) \cdot e^{- \left(\sum_{j} \mu_j \right) x}
+\end{aligned}
+$$
+
+And, denoting $\mu \equiv \sum_i \mu_i$, we see that $s \sim \mathrm{Exp}(\mu)$
+
+
+### Brute-force results
+
+The samples obtained by two methods are identical:
+
+![min-exp-1](out/ex7/sum-exp-sample-1.png)
+![min-exp-2](out/ex7/sum-exp-sample-2.png)
+
+### Samplling fraction
+
+From Monte-Carlo simulation of competing processes with $\mu = [1, 2, 3, 4, 5, 6]$
+we get
+
+```
+process #0: 4.787% of samples, 100*mu_i/mu = 4.7619047
+process #1: 9.556% of samples, 100*mu_i/mu = 9.523809
+process #2: 14.226% of samples, 100*mu_i/mu = 14.285714
+process #3: 19.068% of samples, 100*mu_i/mu = 19.047619
+process #4: 23.855% of samples, 100*mu_i/mu = 23.809525
+process #5: 28.508% of samples, 100*mu_i/mu = 28.571428
+```
+
+To rigorously prove this, consider a set of exponential random variables
+$s_i = \mathrm{Exp}(\mu_i)$ and compute the probability for the $i$th value to be the smallest one
+$$
+\begin{aligned}
+P(s_i < s_j, j \ne i)
+&= \int_0^{+\infty} dx f_{s_i}(x) \prod_{j, j \ne i} (1 - C_{s_j}(x)) \\
+&= \int_0^{+\infty} dx \; \mu_i e^{- \mu_i x} e^{- \left(\sum_{j, j \ne i} \mu_j \right) x} \\
+&= \mu_i \; \int_0^{+\infty} dx e^{- \left(\mu_i + \sum_{j, j \ne i} \mu_j \right) x} \\
+&= \mu_i \; \int_0^{+\infty} dx e^{- \mu x} \\
+&= \frac {\mu_i} {\mu} \\
+\end{aligned}
+$$
+
+## Ex. 8: Compton interaction sampling
+
+
+
+<details>
+<summary>Source code</summary>
+
+```rust
+use itertools::Itertools;
+use ndhistogram::{axis::UniformNoFlow, ndhistogram, Histogram};
+use rand::prelude::*;
+
+// use std::fs::File;
+// use std::io::prelude::*;
+
+use crate::plot::{plot_histogram, plot_lines, Line};
+
+fn compton_energy_ratio(costheta: &f32, k: &f32) -> f32 {
+    1.0 / (1.0 + k * (1.0 - costheta))
+}
+
+// d sigma / d Omega, normalized to unity at theta = 0
+fn klein_nishina_cross_section(costheta: &f32, k: &f32) -> f32 {
+    let e_ratio = compton_energy_ratio(costheta, k);
+    0.5 * e_ratio.powi(2) * (e_ratio + (1.0 / e_ratio) - (1.0 - costheta.powi(2)))
+}
+
+pub struct ScatteredPhoton {
+    pub theta: f32,
+    pub energy_ratio: f32,
+}
+
+pub fn sample_compton_scattering(rng: &mut ThreadRng, k: &f32) -> ScatteredPhoton {
+    let costheta = loop {
+        // sampling in cos(theta) space, so no need for sin(theta) jacobian
+        let costheta_try = 1.0 - 2.0 * rng.gen::<f32>();
+        let kn_value: f32 = rng.gen();
+        if kn_value < klein_nishina_cross_section(&costheta_try, k) {
+            break costheta_try;
+        }
+    };
+    ScatteredPhoton {
+        theta: costheta.acos(),
+        energy_ratio: compton_energy_ratio(&costheta, k),
+    }
+}
+
+pub fn ex8() {
+    let mut rng = thread_rng();
+    for k in [0.01, 0.1, 0.5, 1.0, 10.0, 100.0, 1000.0] {
+        plot_compton_scattering_sample(&mut rng, &k);
+    }
+}
+
+fn plot_compton_scattering_sample(rng: &mut ThreadRng, k: &f32) {
+    let primary_energy_kev = k * 511.0;
+    let costheta = (0..1000)
+        .map(|i| 1.0 - 2.0 * (i as f32) / 1000.0)
+        .collect_vec();
+    let kn = costheta
+        .iter()
+        .map(|th| klein_nishina_cross_section(th, &k))
+        .collect_vec();
+    plot_lines(
+        vec![Line {
+            data: costheta
+                .iter()
+                .zip(kn.iter())
+                .map(|(rx, ry)| (*rx, *ry))
+                .collect_vec(),
+            label: "Klein-Nishina cross section".to_owned(),
+        }],
+        &format!("Klein-Nishina cross section for E = {:.1} m_e c^2", k),
+        "cos(theta)",
+        "normalized cross-section, r_e^2",
+        &format!("out/ex8/k={:.2}-klein-nishina.png", k),
+    )
+    .expect("Failed to plot KN cross section plot");
+
+    let sample_size = 1_000_000;
+    let scattered_photons = (0..sample_size)
+        .map(|_| sample_compton_scattering(rng, &k))
+        .collect_vec();
+
+    // plotting theta distribution
+    let mut theta_hist = ndhistogram!(UniformNoFlow::new(100, 0.0, std::f64::consts::PI));
+    for photon in scattered_photons.iter() {
+        theta_hist.fill(&(photon.theta as f64));
+    }
+    plot_histogram(
+        &theta_hist,
+        &format!(
+            "Compton-scattered photon angles distribution for E = {:.2} KeV",
+            primary_energy_kev,
+        ),
+        "theta",
+        &format!("out/ex8/k={:.2}-theta-dist.png", k),
+        crate::plot::AxLim::FromData,
+        None,
+    )
+    .expect("Failed to plot theta histogram");
+
+    // plotting E distribution
+    let mut energy_hist = ndhistogram!(UniformNoFlow::new(
+        100,
+        compton_energy_ratio(&-1.0, &k) as f64,
+        compton_energy_ratio(&1.0, &k) as f64,
+    ));
+    for photon in scattered_photons.iter() {
+        energy_hist.fill(&(photon.energy_ratio as f64));
+    }
+    plot_histogram(
+        &energy_hist,
+        &format!(
+            "Compton-scattered photon energy distribution for E = {:.2} KeV",
+            primary_energy_kev
+        ),
+        "E_fin / E_in",
+        &format!("out/ex8/k={:.2}-E-dist.png", k),
+        crate::plot::AxLim::FromData,
+        None,
+    )
+    .expect("Failed to plot E histogram");
+}
+
+```
+
+</details>
+
+
+
+
+<details>
+<summary>Execution log</summary>
+
+```
+Plot has been saved to out/ex8/k=0.01-klein-nishina.png
+Histogram has been saved to out/ex8/k=0.01-theta-dist.png
+Histogram has been saved to out/ex8/k=0.01-E-dist.png
+Plot has been saved to out/ex8/k=0.10-klein-nishina.png
+Histogram has been saved to out/ex8/k=0.10-theta-dist.png
+Histogram has been saved to out/ex8/k=0.10-E-dist.png
+Plot has been saved to out/ex8/k=0.50-klein-nishina.png
+Histogram has been saved to out/ex8/k=0.50-theta-dist.png
+Histogram has been saved to out/ex8/k=0.50-E-dist.png
+Plot has been saved to out/ex8/k=1.00-klein-nishina.png
+Histogram has been saved to out/ex8/k=1.00-theta-dist.png
+Histogram has been saved to out/ex8/k=1.00-E-dist.png
+Plot has been saved to out/ex8/k=10.00-klein-nishina.png
+Histogram has been saved to out/ex8/k=10.00-theta-dist.png
+Histogram has been saved to out/ex8/k=10.00-E-dist.png
+Plot has been saved to out/ex8/k=100.00-klein-nishina.png
+Histogram has been saved to out/ex8/k=100.00-theta-dist.png
+Histogram has been saved to out/ex8/k=100.00-E-dist.png
+Plot has been saved to out/ex8/k=1000.00-klein-nishina.png
+Histogram has been saved to out/ex8/k=1000.00-theta-dist.png
+Histogram has been saved to out/ex8/k=1000.00-E-dist.png
+
+
+Total runtime: 7.48 sec
+
+```
+
+</details>
+
+
+
+To sample Klein-Nishina, we can express it as a function of $\cos(\theta)$ and do a regular rejection
+sampling: repeatedly propose its value $t$ and accept it with probability equal to
+$\frac{1}{r_e^2} \frac{d\sigma}{d\Omega}$ - Klein-Nishina cross-section, normalized to be equal to $1$ at
+$\theta = 0 \Rightarrow \cos(\theta) = 1$. Sampling $\cos(\theta)$ implicitly takes care of spherical
+Jacobian, so the sampled direction is not uniform in $\theta$ but actually isotropic on a 3D sphere.
+
+After obtaining the value $\cos(\theta) = t$ from rejection sampling, we say that the photon will
+be scattered to angle $\theta = \mathrm{arccos}(t)$ and it's energy will be changed by the factor
+$\frac{E'}{E} = \frac{1}{1 + \kappa t}$ ($\kappa \equiv E / m_e c^2$).
+
+Example distribution for $\kappa = 0.5$:
+
+![compton-energy](out/ex8/k=0.50-E-dist.png)
+![compton-angle](out/ex8/k=0.50-theta-dist)
+
+<details>
+
+<summary>Plots for different values of k</summary>
+
+![](out/ex8/k=0.01-E-dist.png)
+![](out/ex8/k=0.01-theta-dist.png)
+![](out/ex8/k=0.10-E-dist.png)
+![](out/ex8/k=0.10-theta-dist.png)
+![](out/ex8/k=0.50-E-dist.png)
+![](out/ex8/k=0.50-theta-dist.png)
+![](out/ex8/k=1.00-E-dist.png)
+![](out/ex8/k=1.00-theta-dist.png)
+![](out/ex8/k=10.00-E-dist.png)
+![](out/ex8/k=10.00-theta-dist.png)
+![](out/ex8/k=100.00-E-dist.png)
+![](out/ex8/k=100.00-theta-dist.png)
+![](out/ex8/k=1000.00-E-dist.png)
+![](out/ex8/k=1000.00-theta-dist.png)
+
+</details>
+
+
+
