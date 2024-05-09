@@ -101,7 +101,9 @@ slowly and with large fluctuations.
 To estimate the error, we can fix the number of throws $N$ and repeat the procedure to get the
 distribution of the $\pi$ estimate. From it, we obtain the estimation of $\sigma$ and get the
 scaling factor $k \equiv \sigma \sqrt{N}$, which turns out to be around 1-2, although it fluctuates
-significantly and seems to depend on the number of throws.
+significantly and seems to depend on the number of throws. So, using the conservative value of $k=2$
+we conclude, that to get the precision of at least $\sigma = 10^{-4}$, we need to throw at
+least $N = \left( \frac{k}{\sigma} \right)^2 = 4 \cdot 10^8$ points.
 
 ![pi-est-1](out/ex3/pi-est-distribution-50-throws.png)
 ![pi-est-2](out/ex3/pi-est-distribution-100-throws.png)
