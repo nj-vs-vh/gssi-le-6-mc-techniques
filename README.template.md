@@ -343,4 +343,32 @@ Example distribution for $\kappa = 0.5$:
 </details>
 
 
+## 3D particle tracking for Compton-scattered photon
 
+!include[Source code](src/compton_mc.rs)(rust)
+
+As an exercise, I wanted to use the Klein-Nishina cross-section sampling from Ex. 8
+to make a very simple particle tracking simulation. The medium is modeled as a cuboid with
+constant density, atomic mass and number. A single photon is injected to the material from
+the side, and is tracked as it propagates, experiencing Compton scatterings, until it leaves
+the volume.
+
+In this simple setup, the photon quickly loses energy through highly inelastic scattering events,
+and goes into low-energy regime, where it scatters almost isotropically. The result is a random
+walk:
+
+![](out/compton/e=500.00-emin=0.00-3d-traces.png)
+
+This is of course not a realistic picture, because the photons would start experiencing
+photoeffect at this low energy. To roughly account for that, I introduced a minimum energy
+of 1 KeV, below which the photon propagation is halted and it is considered "absorbed".
+
+![](out/compton/e=200.00-emin=1.00-3d-traces.png)
+![](out/compton/e=800.00-emin=1.00-3d-traces.png)
+![](out/compton/e=6400.00-emin=1.00-3d-traces.png)
+
+I also tried drawing the distribution of photons exiting the metrial from the "back side",
+plotted as a 2D histogram in log brightness, but it turned out to be not very interesting,
+and not depend significantly on photon's energy.
+
+![](out/compton/e=3200.00-emin=1.00-backside-image.png)
