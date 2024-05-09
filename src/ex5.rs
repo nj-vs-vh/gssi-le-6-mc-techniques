@@ -18,38 +18,39 @@ fn onedim_mc_integral(rng: &mut ThreadRng, pow: i32, sample_count: usize) -> f32
 
 fn plot_onedim_integral_mc_distributions(rng: &mut ThreadRng) {
     for pow in [1, 2, 3, 4, 5] {
-        for sample_count in [1_000, 10_000, 100_000] {
-            let estimations_count = 10_000;
-            let estimations = (0..estimations_count)
-                .map(|_| onedim_mc_integral(rng, pow, sample_count))
-                .collect::<Vec<_>>();
-            let (mu, sigma) = mean_std(&estimations);
-            let k_est = sigma * (sample_count as f32).sqrt();
+        println!("\nIntegrating x^{}", pow);
+        let sample_count = 1_000_000;
+        let estimations_count = 1_000;
+        let estimations = (0..estimations_count)
+            .map(|_| onedim_mc_integral(rng, pow, sample_count))
+            .collect::<Vec<_>>();
+        let (mu, sigma) = mean_std(&estimations);
+        println!("Estimate sigma: {}", sigma);
+        let k_est = sigma * (sample_count as f32).sqrt();
 
-            let true_value = 1.0 / (1.0 + pow as f64);
+        let true_value = 1.0 / (1.0 + pow as f64);
 
-            let lo = (mu - 5.0 * sigma) as f64;
-            let hi = (mu + 5.0 * sigma) as f64;
-            let mut hist = ndhistogram!(UniformNoFlow::new(100, lo, hi));
-            for value in estimations {
-                hist.fill(&(value as f64));
-            }
-            plot_histogram(
-                &hist,
-                &format!(
-                    "One-dimensional MC integration with {} samples: {:.4}+/-{:.4}, k = {:.3}",
-                    sample_count, mu, sigma, k_est
-                ),
-                &format!("\\int_0^1 x^{} dx", pow),
-                &format!(
-                    "out/ex5/1/x^{}-mc-integral-{}-samples.png",
-                    pow, sample_count
-                ),
-                AxLim::Range(lo, hi),
-                Some(vec![true_value]),
-            )
-            .expect("Failed to plot histogram");
+        let lo = (mu - 5.0 * sigma) as f64;
+        let hi = (mu + 5.0 * sigma) as f64;
+        let mut hist = ndhistogram!(UniformNoFlow::new(60, lo, hi));
+        for value in estimations {
+            hist.fill(&(value as f64));
         }
+        plot_histogram(
+            &hist,
+            &format!(
+                "One-dimensional MC integration with {} samples: {:.4}+/-{:.4}, k = {:.3}",
+                sample_count, mu, sigma, k_est
+            ),
+            &format!("\\int_0^1 x^{} dx", pow),
+            &format!(
+                "out/ex5/1/x^{}-mc-integral-{}-samples.png",
+                pow, sample_count
+            ),
+            AxLim::Range(lo, hi),
+            Some(vec![true_value]),
+        )
+        .expect("Failed to plot histogram");
     }
 }
 
@@ -186,7 +187,10 @@ fn plot_ndim_integral_mc_vs_midpoint(rng: &mut ThreadRng, integrand: Integrand) 
 pub fn ex5() {
     let mut rng = rand::thread_rng();
 
+    println!("\nEx. 5.1");
     plot_onedim_integral_mc_distributions(&mut rng);
+    println!("\nEx. 5.2");
     plot_ndim_integral_mc_vs_midpoint(&mut rng, Integrand::SquaresSum);
+    println!("\nEx. 5.3");
     plot_ndim_integral_mc_vs_midpoint(&mut rng, Integrand::ExpProduct);
 }

@@ -102,8 +102,8 @@ To estimate the error, we can fix the number of throws $N$ and repeat the proced
 distribution of the $\pi$ estimate. From it, we obtain the Gaussian-looking sample of $\pi$ and
 calculate the scaling factor $k \equiv \sigma \sqrt{N}$, which turns out to be around 1-2,
 although it fluctuates significantly and seems to depend on the number of throws.
-So, using the conservative value of $k=2$ we conclude, that to get the precision of
-at least $\sigma = 10^{-4}$, we need to throw at least
+So, using the conservative value of $k=2$ we conclude, that to get the precision
+$\sigma = 10^{-4}$, we need to throw at least
 $N = \left( \frac{k}{\sigma} \right)^2 = 4 \cdot 10^8$ points.
 
 ![pi-est-1](out/ex3/pi-est-distribution-50-throws.png)
@@ -111,3 +111,94 @@ $N = \left( \frac{k}{\sigma} \right)^2 = 4 \cdot 10^8$ points.
 ![pi-est-3](out/ex3/pi-est-distribution-500-throws.png)
 ![pi-est-4](out/ex3/pi-est-distribution-1000-throws.png)
 ![pi-est-5](out/ex3/pi-est-distribution-5000-throws.png)
+
+
+## Ex. 5: Monte-Carlo integration
+
+!include[Source code](src/ex5.rs)(rust)
+!include[Execution log](out/ex5/ex5.log)
+
+### Ex. 5.1: Unidimensional integration
+
+To estimate the number of samples required for a given precision, we can use the same
+dependence of estimation's variance $\sigma \propto N^{-1/2}$. In the previous exercise
+the coefficient $k$ in this dependence was shown to be of order $1$. Using this rough
+value, we obtain the number of samples required for precision $\sigma = 0.001$:
+$N = \sigma^{-2} = 10^6$.
+
+From the samples we obtain the actual value $k \approx 0.2$, so the actual error is
+factor of $5$ smaller than the required value.
+
+![x-1-mc-integral](out/ex5/1/x^1-mc-integral-1000000-samples.png)
+![x-2-mc-integral](out/ex5/2/x^1-mc-integral-1000000-samples.png)
+![x-3-mc-integral](out/ex5/3/x^1-mc-integral-1000000-samples.png)
+![x-4-mc-integral](out/ex5/4/x^1-mc-integral-1000000-samples.png)
+![x-5-mc-integral](out/ex5/5/x^1-mc-integral-1000000-samples.png)
+
+### Ex. 5.2: Multidimensional integration
+
+For each dimension I produce 500 MC integrations and compare them with the midpoint
+formula and the true integral value. Since the number of samples for MC and cells
+for midpoint formula is chosen to be equal, evaluation time of the methods is within
+an order of magnitude from each other, with MC integration taking $\approx 2$ times more
+time for large numbers of dimensions.
+
+On the plots below, blue line is the true integral value, orange line is midpoint approximation
+result, yellow histogram is MC integration results distribution.
+
+For low number of dimensions the MC integration introduces additional error:
+
+![mc-vs-midpoint-low-dim](out/ex5/2/squares-sum-mc-vs-midpoint-3-dim.png)
+
+For higher dimensionality, the midpoint approximation introduces significant bias,
+while MC integration stays consistent.
+
+![mc-vs-midpoint-high-dim](out/ex5/2/squares-sum-mc-vs-midpoint-7-dim.png)
+
+<details>
+
+<summary>Plots for all dimensions</summary>
+
+
+![mc-vs-midpoint-1-dim](out/ex5/2/squares-sum-mc-vs-midpoint-1-dim.png)
+![mc-vs-midpoint-2-dim](out/ex5/2/squares-sum-mc-vs-midpoint-2-dim.png)
+![mc-vs-midpoint-3-dim](out/ex5/2/squares-sum-mc-vs-midpoint-3-dim.png)
+![mc-vs-midpoint-4-dim](out/ex5/2/squares-sum-mc-vs-midpoint-4-dim.png)
+![mc-vs-midpoint-5-dim](out/ex5/2/squares-sum-mc-vs-midpoint-5-dim.png)
+![mc-vs-midpoint-6-dim](out/ex5/2/squares-sum-mc-vs-midpoint-6-dim.png)
+![mc-vs-midpoint-7-dim](out/ex5/2/squares-sum-mc-vs-midpoint-7-dim.png)
+![mc-vs-midpoint-8-dim](out/ex5/2/squares-sum-mc-vs-midpoint-8-dim.png)
+
+</details>
+
+
+### Ex. 5.3: Multidimensional integration for product of exponents
+
+Qualitatively the results are the same as for previous exercise, but the "critical"
+number of dimensions, at which midpoint integration becomes worse than MC, is higher.
+For example, the previous function in 5 dimensions would be better integrated by MC,
+while for this one the errors of two methods are comparable.
+
+The explaination is as follows, considering one dimension for clarity:
+on $x \in [0, 1]$ the previous function $x^2$ varies in $[0, 1]$, while the exponent
+varies only in $[0, e^{-1} \approx 0.37]$. So, the previous function is "cuspier",
+making midpoint formula more biased as it doesn't probe the peak and underestimates
+the integral.
+
+<details>
+
+<summary>Plots for all dimensions</summary>
+
+
+![mc-vs-midpoint-1-dim-exp](out/ex5/2/exp-product-mc-vs-midpoint-1-dim.png)
+![mc-vs-midpoint-2-dim-exp](out/ex5/2/exp-product-mc-vs-midpoint-2-dim.png)
+![mc-vs-midpoint-3-dim-exp](out/ex5/2/exp-product-mc-vs-midpoint-3-dim.png)
+![mc-vs-midpoint-4-dim-exp](out/ex5/2/exp-product-mc-vs-midpoint-4-dim.png)
+![mc-vs-midpoint-5-dim-exp](out/ex5/2/exp-product-mc-vs-midpoint-5-dim.png)
+![mc-vs-midpoint-6-dim-exp](out/ex5/2/exp-product-mc-vs-midpoint-6-dim.png)
+![mc-vs-midpoint-7-dim-exp](out/ex5/2/exp-product-mc-vs-midpoint-7-dim.png)
+![mc-vs-midpoint-8-dim-exp](out/ex5/2/exp-product-mc-vs-midpoint-8-dim.png)
+
+</details>
+
+

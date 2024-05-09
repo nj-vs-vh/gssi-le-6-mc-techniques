@@ -640,8 +640,8 @@ To estimate the error, we can fix the number of throws $N$ and repeat the proced
 distribution of the $\pi$ estimate. From it, we obtain the Gaussian-looking sample of $\pi$ and
 calculate the scaling factor $k \equiv \sigma \sqrt{N}$, which turns out to be around 1-2,
 although it fluctuates significantly and seems to depend on the number of throws.
-So, using the conservative value of $k=2$ we conclude, that to get the precision of
-at least $\sigma = 10^{-4}$, we need to throw at least
+So, using the conservative value of $k=2$ we conclude, that to get the precision
+$\sigma = 10^{-4}$, we need to throw at least
 $N = \left( \frac{k}{\sigma} \right)^2 = 4 \cdot 10^8$ points.
 
 ![pi-est-1](out/ex3/pi-est-distribution-50-throws.png)
@@ -649,3 +649,389 @@ $N = \left( \frac{k}{\sigma} \right)^2 = 4 \cdot 10^8$ points.
 ![pi-est-3](out/ex3/pi-est-distribution-500-throws.png)
 ![pi-est-4](out/ex3/pi-est-distribution-1000-throws.png)
 ![pi-est-5](out/ex3/pi-est-distribution-5000-throws.png)
+
+
+## Ex. 5: Monte-Carlo integration
+
+
+
+<details>
+<summary>Source code</summary>
+
+```rust
+use itertools::Itertools;
+use ndhistogram::{axis::UniformNoFlow, ndhistogram, Histogram};
+use rand::prelude::*;
+
+use crate::{
+    plot::{plot_histogram, AxLim},
+    utils::mean_std,
+};
+
+fn onedim_mc_integral(rng: &mut ThreadRng, pow: i32, sample_count: usize) -> f32 {
+    let func = |x: f32| x.powi(pow);
+    let n = sample_count as f32;
+    let func_mean = (0..sample_count)
+        .map(|_| func(rng.gen::<f32>()) / n)
+        .sum::<f32>();
+    func_mean // *(b - a), but in this case it's 1
+}
+
+fn plot_onedim_integral_mc_distributions(rng: &mut ThreadRng) {
+    for pow in [1, 2, 3, 4, 5] {
+        println!("\nIntegrating x^{}", pow);
+        let sample_count = 1_000_000;
+        let estimations_count = 1_000;
+        let estimations = (0..estimations_count)
+            .map(|_| onedim_mc_integral(rng, pow, sample_count))
+            .collect::<Vec<_>>();
+        let (mu, sigma) = mean_std(&estimations);
+        println!("Estimate sigma: {}", sigma);
+        let k_est = sigma * (sample_count as f32).sqrt();
+
+        let true_value = 1.0 / (1.0 + pow as f64);
+
+        let lo = (mu - 5.0 * sigma) as f64;
+        let hi = (mu + 5.0 * sigma) as f64;
+        let mut hist = ndhistogram!(UniformNoFlow::new(60, lo, hi));
+        for value in estimations {
+            hist.fill(&(value as f64));
+        }
+        plot_histogram(
+            &hist,
+            &format!(
+                "One-dimensional MC integration with {} samples: {:.4}+/-{:.4}, k = {:.3}",
+                sample_count, mu, sigma, k_est
+            ),
+            &format!("\\int_0^1 x^{} dx", pow),
+            &format!(
+                "out/ex5/1/x^{}-mc-integral-{}-samples.png",
+                pow, sample_count
+            ),
+            AxLim::Range(lo, hi),
+            Some(vec![true_value]),
+        )
+        .expect("Failed to plot histogram");
+    }
+}
+
+enum Integrand {
+    SquaresSum,
+    ExpProduct,
+}
+
+impl Integrand {
+    pub fn name(&self) -> &str {
+        match self {
+            Integrand::SquaresSum => "squares-sum",
+            Integrand::ExpProduct => "exp-product",
+        }
+    }
+
+    pub fn true_integral(&self, ndim: usize) -> f64 {
+        match self {
+            Integrand::SquaresSum => (ndim as f64) / 3.0,
+            Integrand::ExpProduct => (1.0 - 1.0 / std::f64::consts::E).powi(ndim as i32),
+        }
+    }
+
+    pub fn random_value(&self, rng: &mut ThreadRng, ndim: usize) -> f32 {
+        let random_point: Vec<f32> = (0..ndim).map(|_| rng.gen::<f32>()).collect();
+        self.value_at(random_point.iter())
+    }
+
+    pub fn value_at<'a>(&self, point: impl Iterator<Item = &'a f32>) -> f32 {
+        match self {
+            Integrand::SquaresSum => point.map(|coord| (*coord).powi(2)).sum::<f32>(),
+            Integrand::ExpProduct => point.map(|coord| (-*coord).exp()).product::<f32>(),
+        }
+    }
+}
+
+fn ndim_mc_integral(
+    rng: &mut ThreadRng,
+    ndim: usize,
+    sample_count: usize,
+    integrand: &Integrand,
+) -> f32 {
+    let n = sample_count as f32;
+    let func_mean = (0..sample_count)
+        .map(|_| integrand.random_value(rng, ndim) / n)
+        .sum::<f32>();
+    func_mean // times hypercube volume, but in this case it's 1
+}
+
+fn ndim_midpoint_integral(ndim: usize, cells_per_dim: usize, integrand: &Integrand) -> f32 {
+    let step = 1.0 / (cells_per_dim as f32);
+    let cell_volume = step.powi(ndim as i32);
+    let onedim_cell_centers = (0..cells_per_dim)
+        .map(|idx| step * (idx as f32 + 0.5))
+        .collect::<Vec<_>>();
+    let cell_centers = (0..ndim)
+        .map(|_| onedim_cell_centers.iter())
+        .multi_cartesian_product();
+    cell_centers
+        .map(|cell| cell_volume * integrand.value_at(cell.into_iter()))
+        .sum()
+}
+
+fn integration_params(ndim: &usize) -> (usize, usize) {
+    let cells_per_dim = match *ndim {
+        1 => 65536,
+        2 => 256,
+        3 => 40,
+        4 => 16,
+        5 => 9,
+        6 => 6,
+        7 => 5,
+        8 => 4,
+        _ => panic!("Unexpected dimension number"),
+    };
+    (cells_per_dim, cells_per_dim.pow(*ndim as u32))
+}
+
+fn plot_ndim_integral_mc_vs_midpoint(rng: &mut ThreadRng, integrand: Integrand) {
+    for ndim in 1..=8 {
+        let (cells_per_dim, sample_count) = integration_params(&ndim);
+        let mut timer = std::time::Instant::now();
+        let int_midpoint = ndim_midpoint_integral(ndim, cells_per_dim, &integrand) as f64;
+        println!(
+            "Midpoint integration took {:.4} sec",
+            timer.elapsed().as_secs_f32()
+        );
+
+        let evals: usize = 500;
+        timer = std::time::Instant::now();
+        let int_mc_evals: Vec<f32> = (0..evals)
+            .map(|_| ndim_mc_integral(rng, ndim, sample_count, &integrand))
+            .collect();
+
+        let time = timer.elapsed().as_secs_f32();
+        println!(
+            "{} MC integrations took {:.2} sec, on average {:.4} sec",
+            evals,
+            time,
+            time / (evals as f32)
+        );
+        let (mu, sigma) = mean_std(&int_mc_evals);
+        let lo = (mu - 5.0 * sigma) as f64;
+        let hi = (mu + 5.0 * sigma) as f64;
+        let mut hist = ndhistogram!(UniformNoFlow::new(30, lo, hi));
+        for value in int_mc_evals {
+            hist.fill(&(value as f64));
+        }
+        let true_value = integrand.true_integral(ndim);
+
+        plot_histogram(
+            &hist,
+            &format!(
+                "MC integration vs midpoint integration for {} dimensions",
+                ndim
+            ),
+            "integral value",
+            &format!(
+                "out/ex5/2/{}-mc-vs-midpoint-{}-dim.png",
+                integrand.name(),
+                ndim
+            ),
+            AxLim::enlarged_range(
+                lo.min(true_value.min(int_midpoint)),
+                hi.max(true_value.max(int_midpoint)),
+                0.05,
+            ),
+            Some(vec![true_value, int_midpoint]),
+        )
+        .expect("Failed to plot histogram");
+    }
+}
+
+pub fn ex5() {
+    let mut rng = rand::thread_rng();
+
+    println!("\nEx. 5.1");
+    plot_onedim_integral_mc_distributions(&mut rng);
+    println!("\nEx. 5.2");
+    plot_ndim_integral_mc_vs_midpoint(&mut rng, Integrand::SquaresSum);
+    println!("\nEx. 5.3");
+    plot_ndim_integral_mc_vs_midpoint(&mut rng, Integrand::ExpProduct);
+}
+
+```
+
+</details>
+
+
+
+
+<details>
+<summary>Execution log</summary>
+
+```
+
+Ex. 5.1
+
+Integrating x^1
+Estimate sigma: 0.00055939646
+Histogram has been saved to out/ex5/1/x^1-mc-integral-1000000-samples.png
+
+Integrating x^2
+Estimate sigma: 0.00028628026
+Histogram has been saved to out/ex5/1/x^2-mc-integral-1000000-samples.png
+
+Integrating x^3
+Estimate sigma: 0.00033982936
+Histogram has been saved to out/ex5/1/x^3-mc-integral-1000000-samples.png
+
+Integrating x^4
+Estimate sigma: 0.00012207031
+Histogram has been saved to out/ex5/1/x^4-mc-integral-1000000-samples.png
+
+Integrating x^5
+Estimate sigma: 0.00033707765
+Histogram has been saved to out/ex5/1/x^5-mc-integral-1000000-samples.png
+
+Ex. 5.2
+Midpoint integration took 0.0016 sec
+500 MC integrations took 0.92 sec, on average 0.0018 sec
+Histogram has been saved to out/ex5/2/squares-sum-mc-vs-midpoint-1-dim.png
+Midpoint integration took 0.0015 sec
+500 MC integrations took 1.11 sec, on average 0.0022 sec
+Histogram has been saved to out/ex5/2/squares-sum-mc-vs-midpoint-2-dim.png
+Midpoint integration took 0.0016 sec
+500 MC integrations took 1.31 sec, on average 0.0026 sec
+Histogram has been saved to out/ex5/2/squares-sum-mc-vs-midpoint-3-dim.png
+Midpoint integration took 0.0017 sec
+500 MC integrations took 1.56 sec, on average 0.0031 sec
+Histogram has been saved to out/ex5/2/squares-sum-mc-vs-midpoint-4-dim.png
+Midpoint integration took 0.0016 sec
+500 MC integrations took 1.61 sec, on average 0.0032 sec
+Histogram has been saved to out/ex5/2/squares-sum-mc-vs-midpoint-5-dim.png
+Midpoint integration took 0.0013 sec
+500 MC integrations took 1.42 sec, on average 0.0028 sec
+Histogram has been saved to out/ex5/2/squares-sum-mc-vs-midpoint-6-dim.png
+Midpoint integration took 0.0022 sec
+500 MC integrations took 2.63 sec, on average 0.0053 sec
+Histogram has been saved to out/ex5/2/squares-sum-mc-vs-midpoint-7-dim.png
+Midpoint integration took 0.0020 sec
+500 MC integrations took 2.43 sec, on average 0.0049 sec
+Histogram has been saved to out/ex5/2/squares-sum-mc-vs-midpoint-8-dim.png
+
+Ex. 5.3
+Midpoint integration took 0.0017 sec
+500 MC integrations took 1.00 sec, on average 0.0020 sec
+Histogram has been saved to out/ex5/2/exp-product-mc-vs-midpoint-1-dim.png
+Midpoint integration took 0.0018 sec
+500 MC integrations took 1.29 sec, on average 0.0026 sec
+Histogram has been saved to out/ex5/2/exp-product-mc-vs-midpoint-2-dim.png
+Midpoint integration took 0.0020 sec
+500 MC integrations took 1.56 sec, on average 0.0031 sec
+Histogram has been saved to out/ex5/2/exp-product-mc-vs-midpoint-3-dim.png
+Midpoint integration took 0.0023 sec
+500 MC integrations took 1.89 sec, on average 0.0038 sec
+Histogram has been saved to out/ex5/2/exp-product-mc-vs-midpoint-4-dim.png
+Midpoint integration took 0.0026 sec
+500 MC integrations took 2.06 sec, on average 0.0041 sec
+Histogram has been saved to out/ex5/2/exp-product-mc-vs-midpoint-5-dim.png
+Midpoint integration took 0.0020 sec
+500 MC integrations took 1.83 sec, on average 0.0037 sec
+Histogram has been saved to out/ex5/2/exp-product-mc-vs-midpoint-6-dim.png
+Midpoint integration took 0.0034 sec
+500 MC integrations took 3.41 sec, on average 0.0068 sec
+Histogram has been saved to out/ex5/2/exp-product-mc-vs-midpoint-7-dim.png
+Midpoint integration took 0.0031 sec
+500 MC integrations took 3.12 sec, on average 0.0062 sec
+Histogram has been saved to out/ex5/2/exp-product-mc-vs-midpoint-8-dim.png
+
+
+Total runtime: 63.04 sec
+
+```
+
+</details>
+
+
+
+### Ex. 5.1: Unidimensional integration
+
+To estimate the number of samples required for a given precision, we can use the same
+dependence of estimation's variance $\sigma \propto N^{-1/2}$. In the previous exercise
+the coefficient $k$ in this dependence was shown to be of order $1$. Using this rough
+value, we obtain the number of samples required for precision $\sigma = 0.001$:
+$N = \sigma^{-2} = 10^6$.
+
+From the samples we obtain the actual value $k \approx 0.2$, so the actual error is
+factor of $5$ smaller than the required value.
+
+![x-1-mc-integral](out/ex5/1/x^1-mc-integral-1000000-samples.png)
+![x-2-mc-integral](out/ex5/2/x^1-mc-integral-1000000-samples.png)
+![x-3-mc-integral](out/ex5/3/x^1-mc-integral-1000000-samples.png)
+![x-4-mc-integral](out/ex5/4/x^1-mc-integral-1000000-samples.png)
+![x-5-mc-integral](out/ex5/5/x^1-mc-integral-1000000-samples.png)
+
+### Ex. 5.2: Multidimensional integration
+
+For each dimension I produce 500 MC integrations and compare them with the midpoint
+formula and the true integral value. Since the number of samples for MC and cells
+for midpoint formula is chosen to be equal, evaluation time of the methods is within
+an order of magnitude from each other, with MC integration taking $\approx 2$ times more
+time for large numbers of dimensions.
+
+On the plots below, blue line is the true integral value, orange line is midpoint approximation
+result, yellow histogram is MC integration results distribution.
+
+For low number of dimensions the MC integration introduces additional error:
+
+![mc-vs-midpoint-low-dim](out/ex5/2/squares-sum-mc-vs-midpoint-3-dim.png)
+
+For higher dimensionality, the midpoint approximation introduces significant bias,
+while MC integration stays consistent.
+
+![mc-vs-midpoint-high-dim](out/ex5/2/squares-sum-mc-vs-midpoint-7-dim.png)
+
+<details>
+
+<summary>Plots for all dimensions</summary>
+
+
+![mc-vs-midpoint-1-dim](out/ex5/2/squares-sum-mc-vs-midpoint-1-dim.png)
+![mc-vs-midpoint-2-dim](out/ex5/2/squares-sum-mc-vs-midpoint-2-dim.png)
+![mc-vs-midpoint-3-dim](out/ex5/2/squares-sum-mc-vs-midpoint-3-dim.png)
+![mc-vs-midpoint-4-dim](out/ex5/2/squares-sum-mc-vs-midpoint-4-dim.png)
+![mc-vs-midpoint-5-dim](out/ex5/2/squares-sum-mc-vs-midpoint-5-dim.png)
+![mc-vs-midpoint-6-dim](out/ex5/2/squares-sum-mc-vs-midpoint-6-dim.png)
+![mc-vs-midpoint-7-dim](out/ex5/2/squares-sum-mc-vs-midpoint-7-dim.png)
+![mc-vs-midpoint-8-dim](out/ex5/2/squares-sum-mc-vs-midpoint-8-dim.png)
+
+</details>
+
+
+### Ex. 5.3: Multidimensional integration for product of exponents
+
+Qualitatively the results are the same as for previous exercise, but the "critical"
+number of dimensions, at which midpoint integration becomes worse than MC, is higher.
+For example, the previous function in 5 dimensions would be better integrated by MC,
+while for this one the errors of two methods are comparable.
+
+The explaination is as follows, considering one dimension for clarity:
+on $x \in [0, 1]$ the previous function $x^2$ varies in $[0, 1]$, while the exponent
+varies only in $[0, e^{-1} \approx 0.37]$. So, the previous function is "cuspier",
+making midpoint formula more biased as it doesn't probe the peak and underestimates
+the integral.
+
+<details>
+
+<summary>Plots for all dimensions</summary>
+
+
+![mc-vs-midpoint-1-dim-exp](out/ex5/2/exp-product-mc-vs-midpoint-1-dim.png)
+![mc-vs-midpoint-2-dim-exp](out/ex5/2/exp-product-mc-vs-midpoint-2-dim.png)
+![mc-vs-midpoint-3-dim-exp](out/ex5/2/exp-product-mc-vs-midpoint-3-dim.png)
+![mc-vs-midpoint-4-dim-exp](out/ex5/2/exp-product-mc-vs-midpoint-4-dim.png)
+![mc-vs-midpoint-5-dim-exp](out/ex5/2/exp-product-mc-vs-midpoint-5-dim.png)
+![mc-vs-midpoint-6-dim-exp](out/ex5/2/exp-product-mc-vs-midpoint-6-dim.png)
+![mc-vs-midpoint-7-dim-exp](out/ex5/2/exp-product-mc-vs-midpoint-7-dim.png)
+![mc-vs-midpoint-8-dim-exp](out/ex5/2/exp-product-mc-vs-midpoint-8-dim.png)
+
+</details>
+
+

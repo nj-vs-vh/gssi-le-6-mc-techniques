@@ -1,0 +1,77 @@
+
+Ex. 5.1
+
+Integrating x^1
+Estimate sigma: 0.00055939646
+Histogram has been saved to out/ex5/1/x^1-mc-integral-1000000-samples.png
+
+Integrating x^2
+Estimate sigma: 0.00028628026
+Histogram has been saved to out/ex5/1/x^2-mc-integral-1000000-samples.png
+
+Integrating x^3
+Estimate sigma: 0.00033982936
+Histogram has been saved to out/ex5/1/x^3-mc-integral-1000000-samples.png
+
+Integrating x^4
+Estimate sigma: 0.00012207031
+Histogram has been saved to out/ex5/1/x^4-mc-integral-1000000-samples.png
+
+Integrating x^5
+Estimate sigma: 0.00033707765
+Histogram has been saved to out/ex5/1/x^5-mc-integral-1000000-samples.png
+
+Ex. 5.2
+Midpoint integration took 0.0016 sec
+500 MC integrations took 0.92 sec, on average 0.0018 sec
+Histogram has been saved to out/ex5/2/squares-sum-mc-vs-midpoint-1-dim.png
+Midpoint integration took 0.0015 sec
+500 MC integrations took 1.11 sec, on average 0.0022 sec
+Histogram has been saved to out/ex5/2/squares-sum-mc-vs-midpoint-2-dim.png
+Midpoint integration took 0.0016 sec
+500 MC integrations took 1.31 sec, on average 0.0026 sec
+Histogram has been saved to out/ex5/2/squares-sum-mc-vs-midpoint-3-dim.png
+Midpoint integration took 0.0017 sec
+500 MC integrations took 1.56 sec, on average 0.0031 sec
+Histogram has been saved to out/ex5/2/squares-sum-mc-vs-midpoint-4-dim.png
+Midpoint integration took 0.0016 sec
+500 MC integrations took 1.61 sec, on average 0.0032 sec
+Histogram has been saved to out/ex5/2/squares-sum-mc-vs-midpoint-5-dim.png
+Midpoint integration took 0.0013 sec
+500 MC integrations took 1.42 sec, on average 0.0028 sec
+Histogram has been saved to out/ex5/2/squares-sum-mc-vs-midpoint-6-dim.png
+Midpoint integration took 0.0022 sec
+500 MC integrations took 2.63 sec, on average 0.0053 sec
+Histogram has been saved to out/ex5/2/squares-sum-mc-vs-midpoint-7-dim.png
+Midpoint integration took 0.0020 sec
+500 MC integrations took 2.43 sec, on average 0.0049 sec
+Histogram has been saved to out/ex5/2/squares-sum-mc-vs-midpoint-8-dim.png
+
+Ex. 5.3
+Midpoint integration took 0.0017 sec
+500 MC integrations took 1.00 sec, on average 0.0020 sec
+Histogram has been saved to out/ex5/2/exp-product-mc-vs-midpoint-1-dim.png
+Midpoint integration took 0.0018 sec
+500 MC integrations took 1.29 sec, on average 0.0026 sec
+Histogram has been saved to out/ex5/2/exp-product-mc-vs-midpoint-2-dim.png
+Midpoint integration took 0.0020 sec
+500 MC integrations took 1.56 sec, on average 0.0031 sec
+Histogram has been saved to out/ex5/2/exp-product-mc-vs-midpoint-3-dim.png
+Midpoint integration took 0.0023 sec
+500 MC integrations took 1.89 sec, on average 0.0038 sec
+Histogram has been saved to out/ex5/2/exp-product-mc-vs-midpoint-4-dim.png
+Midpoint integration took 0.0026 sec
+500 MC integrations took 2.06 sec, on average 0.0041 sec
+Histogram has been saved to out/ex5/2/exp-product-mc-vs-midpoint-5-dim.png
+Midpoint integration took 0.0020 sec
+500 MC integrations took 1.83 sec, on average 0.0037 sec
+Histogram has been saved to out/ex5/2/exp-product-mc-vs-midpoint-6-dim.png
+Midpoint integration took 0.0034 sec
+500 MC integrations took 3.41 sec, on average 0.0068 sec
+Histogram has been saved to out/ex5/2/exp-product-mc-vs-midpoint-7-dim.png
+Midpoint integration took 0.0031 sec
+500 MC integrations took 3.12 sec, on average 0.0062 sec
+Histogram has been saved to out/ex5/2/exp-product-mc-vs-midpoint-8-dim.png
+
+
+Total runtime: 63.04 sec
