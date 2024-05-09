@@ -126,14 +126,14 @@ the coefficient $k$ in this dependence was shown to be of order $1$. Using this 
 value, we obtain the number of samples required for precision $\sigma = 0.001$:
 $N = \sigma^{-2} = 10^6$.
 
-From the samples we estimate the actual value $k \approx 0.2$, so the error is
-a factor of $5$ smaller than the required value.
+From the samples we estimate the actual value $k \approx 0.1 - 0.5$, so the error is
+a factor of $2-10$ smaller than the required value.
 
 ![x-1-mc-integral](out/ex5/1/x^1-mc-integral-1000000-samples.png)
-![x-2-mc-integral](out/ex5/2/x^1-mc-integral-1000000-samples.png)
-![x-3-mc-integral](out/ex5/3/x^1-mc-integral-1000000-samples.png)
-![x-4-mc-integral](out/ex5/4/x^1-mc-integral-1000000-samples.png)
-![x-5-mc-integral](out/ex5/5/x^1-mc-integral-1000000-samples.png)
+![x-2-mc-integral](out/ex5/1/x^2-mc-integral-1000000-samples.png)
+![x-3-mc-integral](out/ex5/1/x^3-mc-integral-1000000-samples.png)
+![x-4-mc-integral](out/ex5/1/x^4-mc-integral-1000000-samples.png)
+![x-5-mc-integral](out/ex5/1/x^5-mc-integral-1000000-samples.png)
 
 ### Ex. 5.2: Multidimensional integration
 
