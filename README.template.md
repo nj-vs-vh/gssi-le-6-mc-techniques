@@ -253,7 +253,8 @@ $$
 
 And it follows that $s \sim \mathrm{Exp}(\mu_1 + \mu_2)$
 
-For a more general proof, we can either do it inductively, or write in more general form
+For a more general proof in the case $s = \sum_i s_i$, we can either do it inductively,
+or write in more general form
 
 $$
 \begin{aligned}
