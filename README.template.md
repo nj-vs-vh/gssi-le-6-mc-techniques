@@ -202,3 +202,145 @@ the integral.
 </details>
 
 
+## Ex. 6: Truncation errors
+
+!include[Source code](src/ex6.rs)(rust)
+!include[Execution log](out/ex6/ex6.log)
+
+In addition to single and double precision floats (correspondingly `f32` and `f64` in Rust)
+I've tried half-precison 16-bit float:
+
+| n | half (f16)   | single (f32) | double (f64)|
+| --- | --- | --- | --- |
+| 100 | 0.98828125   | 0.99999934   | 1.0000000000000007|
+| 1000 | 0.9785156    | 0.9999907    | 1.0000000000000007|
+| 10000 | 0.25         | 1.0000535    | 0.9999999999999062|
+| 100000 | 0            | 1.0009902    | 0.9999999999980838|
+| 1000000 | 0            | 1.0090389    | 1.000000000007918|
+
+
+## Ex. 7: Tracking algorithms
+
+!include[Source code](src/ex7.rs)(rust)
+!include[Execution log](out/ex7/ex7.log)
+
+### Proof
+
+Consider two random variables $s_{1}$, $s_2$ and the random variable
+$s \equiv \min(s_1, s_2)$. We need to find the disribution of $s$.
+
+By definition, $s$ takes the smalles value of the $s_1, s_2$ pair.
+Therefore, for $s$ to have a particular value $x$ requires either $s_1$ to be equal to $x$
+and $s_2$ to be greater than $s_1$, or vice versa. We can write it as
+
+$$
+P(s \in (x, x + dx)) = P(s_1 \in (x, x + dx)) P( s_2 > x ) + P(s_2 \in (x, x + dx)) P( s_1 > x )
+$$
+
+Denoting PDF as $f$ and CDF as $C$, we write
+
+$$
+f_s(x) = f_{s_1}(x) (1 - C_{s_2}(x)) + f_{s_2}(x) (1 - C_{s_1}(x))
+$$
+
+Now, considering the case of interest $s_{1, 2} = \mathrm{Exp}(\mu_{1, 2})$, we get
+$$
+f_s(x) =
+\mu_1 e^{-\mu_1 x} \cdot e^{-\mu_2 x} + \mu_2 e^{-\mu_2 x} \cdot e^{-\mu_1 x} =
+(\mu_1 + \mu_2) e^{-(\mu_1 + \mu_2)x}
+$$
+
+And it follows that $s \sim \mathrm{Exp}(\mu_1 + \mu_2)$
+
+For a more general proof, we can either do it inductively, or write in more general form
+$$
+\begin{aligned}
+f_s(x) &= \sum_i f_{s_i}(x) \prod_{j, j \ne i} (1 - C_{s_j}(x)) \\
+&= \sum_i \mu_i e^{-\mu_i x} \prod_{j, j \ne i} e^{-\mu_j x} \\
+&= \sum_i \mu_i e^{-\mu_i x}  e^{- \left(\sum_{j, j \ne i} \mu_j \right) x} \\
+&= \sum_i \mu_i e^{- \left(\mu_i + \sum_{j, j \ne i} \mu_j \right) x} \\
+&= \sum_i \mu_i e^{- \left(\sum_{j} \mu_j \right) x} \\
+&= \left( \sum_i \mu_i \right) \cdot e^{- \left(\sum_{j} \mu_j \right) x}
+\end{aligned}
+$$
+
+And, denoting $\mu \equiv \sum_i \mu_i$, we see that $s \sim \mathrm{Exp}(\mu)$
+
+
+### Brute-force results
+
+The samples obtained by two methods are identical:
+
+![min-exp-1](out/ex7/sum-exp-sample-1.png)
+![min-exp-2](out/ex7/sum-exp-sample-2.png)
+
+### Samplling fraction
+
+From Monte-Carlo simulation of competing processes with $\mu = [1, 2, 3, 4, 5, 6]$
+we get
+
+```
+process #0: 4.787% of samples, 100*mu_i/mu = 4.7619047
+process #1: 9.556% of samples, 100*mu_i/mu = 9.523809
+process #2: 14.226% of samples, 100*mu_i/mu = 14.285714
+process #3: 19.068% of samples, 100*mu_i/mu = 19.047619
+process #4: 23.855% of samples, 100*mu_i/mu = 23.809525
+process #5: 28.508% of samples, 100*mu_i/mu = 28.571428
+```
+
+To rigorously prove this, consider a set of exponential random variables
+$s_i = \mathrm{Exp}(\mu_i)$ and compute the probability for the $i$th value to be the smallest one
+$$
+\begin{aligned}
+P(s_i < s_j, j \ne i)
+&= \int_0^{+\infty} dx f_{s_i}(x) \prod_{j, j \ne i} (1 - C_{s_j}(x)) \\
+&= \int_0^{+\infty} dx \; \mu_i e^{- \mu_i x} e^{- \left(\sum_{j, j \ne i} \mu_j \right) x} \\
+&= \mu_i \; \int_0^{+\infty} dx e^{- \left(\mu_i + \sum_{j, j \ne i} \mu_j \right) x} \\
+&= \mu_i \; \int_0^{+\infty} dx e^{- \mu x} \\
+&= \frac {\mu_i} {\mu} \\
+\end{aligned}
+$$
+
+## Ex. 8: Compton interaction sampling
+
+!include[Source code](src/ex8.rs)(rust)
+!include[Execution log](out/ex8/ex8.log)
+
+To sample Klein-Nishina, we can express it as a function of $\cos(\theta)$ and do a regular rejection
+sampling: repeatedly propose its value $t$ and accept it with probability equal to
+$\frac{1}{r_e^2} \frac{d\sigma}{d\Omega}$ - Klein-Nishina cross-section, normalized to be equal to $1$ at
+$\theta = 0 \Rightarrow \cos(\theta) = 1$. Sampling $\cos(\theta)$ implicitly takes care of spherical
+Jacobian, so the sampled direction is not uniform in $\theta$ but actually isotropic on a 3D sphere.
+
+After obtaining the value $\cos(\theta) = t$ from rejection sampling, we say that the photon will
+be scattered to angle $\theta = \mathrm{arccos}(t)$ and it's energy will be changed by the factor
+$\frac{E'}{E} = \frac{1}{1 + \kappa t}$ ($\kappa \equiv E / m_e c^2$).
+
+Example distribution for $\kappa = 0.5$:
+
+![compton-energy](out/ex8/k=0.50-E-dist.png)
+![compton-angle](out/ex8/k=0.50-theta-dist)
+
+<details>
+
+<summary>Plots for different values of k</summary>
+
+![](out/ex8/k=0.01-E-dist.png)
+![](out/ex8/k=0.01-theta-dist.png)
+![](out/ex8/k=0.10-E-dist.png)
+![](out/ex8/k=0.10-theta-dist.png)
+![](out/ex8/k=0.50-E-dist.png)
+![](out/ex8/k=0.50-theta-dist.png)
+![](out/ex8/k=1.00-E-dist.png)
+![](out/ex8/k=1.00-theta-dist.png)
+![](out/ex8/k=10.00-E-dist.png)
+![](out/ex8/k=10.00-theta-dist.png)
+![](out/ex8/k=100.00-E-dist.png)
+![](out/ex8/k=100.00-theta-dist.png)
+![](out/ex8/k=1000.00-E-dist.png)
+![](out/ex8/k=1000.00-theta-dist.png)
+
+</details>
+
+
+
