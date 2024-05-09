@@ -23,6 +23,7 @@ struct CliArgs {
 
 fn main() {
     let args = CliArgs::parse();
+    let start = std::time::Instant::now();
 
     match args.exercise.as_str() {
         "1" => ex1::ex1(),
@@ -37,4 +38,9 @@ fn main() {
             println!("Exercise {:?} not found", args.exercise);
         }
     }
+
+    println!(
+        "\n\nTotal runtime: {:.2} sec",
+        start.elapsed().as_secs_f32()
+    )
 }
