@@ -1,14 +1,14 @@
 <!-- DO NOT EDIT, GENERATED AUTOMATICALLY -->
 
-# LE-6 Monte Carlo techniques: Excercises
+# LE-6 Monte Carlo techniques: exercises
 
-*Igor Vaiman*
+Igor Vaiman
 
 ## Introduction
 
 The exercises are done in Rust programming language. It's not widely used in physics
 community but hopefully can see wider adoption in the future. In combines access to
-low-level performance and fine control with high-level features of modern programming
+low-level performance and fine-grained control with high-level features of modern programming
 languages. Its emphasis on memory safety, "fearless concurrency" and compile-time error
 detection might be helpful in parallelizing scientific tasks.
 
@@ -279,9 +279,10 @@ Total runtime: 31.67 sec
 
 The exercise is to write a Multiplicative Congruent Generator (MCG) that produces
 a stream of numbers according to the rule $X_{i+1} = (M \cdot X_{i}) \text{mod} N$.
-$N$ is fixed to $2^{32}$ by the fact that we're dealing with unsigned 32-bit integers
-(`u32` Rust datatype) and use overflowing multiplication that wraps numbers on overflow.
-The MCG then has two parameters: a multiplier $M$ and an initial value $X_0$.
+$N$ is fixed to $2^{32}$ by the fact that we're using unsigned 32-bit integers
+(`u32` Rust datatype) and use wrapping multiplication (which in Rust must be explicitly
+asked for with `a.wrapping_mul(b)`). The MCG then has two parameters:
+a multiplier $M$ and an initial value $X_0$.
 
 Results for MCG with initial value: 987654321 and multiplier: 663608941:
 ```
@@ -298,10 +299,9 @@ of uniformity:
 ![2-to-the-30th](out/ex1/from%20exercise-2^30.png)
 
 
-I decided to try other, rather small and not specifically selected parameters: 
-initial value: 10 and multiplier: 9. The cycle size is 4 times shorter, $2^{28}$, but the
-distributions look fairly flat anyway. Perhaps, the sample is much more correlated
-in this case.
+I decided to try another, not specifically selected parameters to see the impact on the output.
+With initial value: 10 and multiplier: 9 the cycle size is 4 times shorter, $2^{28}$, but the
+distributions look fairly flat. Perhaps, the sample is much more correlated in this case.
 
 <details>
 <summary>Samples</summary>
@@ -316,10 +316,10 @@ in this case.
 
 ### Ex. 1.1: MINSTD algorithm
 
-Again, MINST is an MCG with multiplier $M = 7^5 = 16807$, but $N$ is not a Mersenne prime $2^{31} - 1$.
-This requires one to use 64-bit integer type and perform modulus operation explicitly. But for that we
-get a longer sequence, spanning the full range of $2^{31} - 1$, and this seems to happen irrespective
-of the seed (initial value).
+Again, MINST is an MCG with multiplier $M = 7^5 = 16807$, but $N$ is now a Mersenne prime $2^{31} - 1$.
+This requires one to use 64-bit integer type and perform modulus operation explicitly. in return we
+get a longer sequence, spanning the full range of $2^{31} - 1$ possible values, and this seems
+to happen irrespective of the seed (initial value).
 
 ## Ex. 2: Random sampling
 
@@ -434,8 +434,8 @@ Using it, we obtain a sample:
 ### Ex. 2.2: Inversion and rejection
 
 In principle, the result could depend on compiler optimizations. In Rust, optimizations are
-controlled by `--release` flag. Both with and without this flag the analytic method works
-faster, at least on my machine, but optimization makes the lead more pronounced:
+controlled by `--release` flag. Both with and without this flag, the analytic method works
+faster, but optimization makes its lead much more pronounced:
 
 |                             	| Analytic 	| Rejection 	|
 |-----------------------------	|----------	|-----------	|
@@ -637,10 +637,10 @@ slowly and with large fluctuations.
 ### Ex. 3.1: Uncertainty evaluation
 
 To estimate the error, we can fix the number of throws $N$ and repeat the procedure to get the
-distribution of the $\pi$ estimate. From it, we obtain the Gaussian-looking sample of $\pi$ and
+distribution of the $\pi$ estimate. From it, we obtain the Gaussian-looking sample of estimates and
 calculate the scaling factor $k \equiv \sigma \sqrt{N}$, which turns out to be around 1-2,
 although it fluctuates significantly and seems to depend on the number of throws.
-So, using the conservative value of $k=2$ we conclude, that to get the precision
+Using the conservative value of $k=2$ we conclude that to get the precision
 $\sigma = 10^{-4}$, we need to throw at least
 $N = \left( \frac{k}{\sigma} \right)^2 = 4 \cdot 10^8$ points.
 
@@ -959,8 +959,8 @@ the coefficient $k$ in this dependence was shown to be of order $1$. Using this 
 value, we obtain the number of samples required for precision $\sigma = 0.001$:
 $N = \sigma^{-2} = 10^6$.
 
-From the samples we obtain the actual value $k \approx 0.2$, so the actual error is
-factor of $5$ smaller than the required value.
+From the samples we estimate the actual value $k \approx 0.2$, so the error is
+a factor of $5$ smaller than the required value.
 
 ![x-1-mc-integral](out/ex5/1/x^1-mc-integral-1000000-samples.png)
 ![x-2-mc-integral](out/ex5/2/x^1-mc-integral-1000000-samples.png)
@@ -976,10 +976,10 @@ for midpoint formula is chosen to be equal, evaluation time of the methods is wi
 an order of magnitude from each other, with MC integration taking $\approx 2$ times more
 time for large numbers of dimensions.
 
-On the plots below, blue line is the true integral value, orange line is midpoint approximation
+In the plots below, blue line is the true integral value, orange line is midpoint approximation
 result, yellow histogram is MC integration results distribution.
 
-For low number of dimensions the MC integration introduces additional error:
+For a low number of dimensions the MC integration introduces additional error:
 
 ![mc-vs-midpoint-low-dim](out/ex5/2/squares-sum-mc-vs-midpoint-3-dim.png)
 
@@ -1007,15 +1007,15 @@ while MC integration stays consistent.
 
 ### Ex. 5.3: Multidimensional integration for product of exponents
 
-Qualitatively the results are the same as for previous exercise, but the "critical"
+Qualitatively, the results are the same as for previous exercise, but the "critical"
 number of dimensions, at which midpoint integration becomes worse than MC, is higher.
-For example, the previous function in 5 dimensions would be better integrated by MC,
+For example, in 5 dimensions the previous function would be better integrated by MC,
 while for this one the errors of two methods are comparable.
 
 The explaination is as follows, considering one dimension for clarity:
-on $x \in [0, 1]$ the previous function $x^2$ varies in $[0, 1]$, while the exponent
-varies only in $[0, e^{-1} \approx 0.37]$. So, the previous function is "cuspier",
-making midpoint formula more biased as it doesn't probe the peak and underestimates
+on $x \in [0, 1]$ the function $x^2$ varies in $[0, 1]$, while the $e^{-x}$
+- only in $[0, e^{-1}] \approx [0, 0.37]$. So, the previous function is "cuspier",
+making midpoint formula more biased: it can't probe the peak and underestimates
 the integral.
 
 <details>
@@ -1511,7 +1511,7 @@ Example distribution for $\kappa = 0.5$:
 </details>
 
 
-## 3D particle tracking for Compton-scattered photon
+## 3D tracking of Compton-scattered photon
 
 
 
@@ -1860,24 +1860,24 @@ As an exercise, I wanted to use the Klein-Nishina cross-section sampling from Ex
 to make a very simple particle tracking simulation. The medium is modeled as a cuboid with
 constant density, atomic mass and number. A single photon is injected to the material from
 the side, and is tracked as it propagates, experiencing Compton scatterings, until it leaves
-the volume.
+the volume or is "absorbed" (see below).
 
 In this simple setup, the photon quickly loses energy through highly inelastic scattering events,
-and goes into low-energy regime, where it scatters almost isotropically. The result is a random
-walk:
+and goes into low-energy regime, where it keeps almost all of it's energy and scatters almost
+isotropically. The result is a random walk:
 
 ![](out/compton/e=500.00-emin=0.00-3d-traces.png)
 
-This is of course not a realistic picture, because the photons would start experiencing
-photoeffect at this low energy. To roughly account for that, I introduced a minimum energy
+This is of course not a realistic picture, because at this low energy the photons would start
+experiencing photoelectric effect. To roughly account for that, I introduced a minimum energy
 of 1 KeV, below which the photon propagation is halted and it is considered "absorbed".
 
 ![](out/compton/e=200.00-emin=1.00-3d-traces.png)
 ![](out/compton/e=800.00-emin=1.00-3d-traces.png)
 ![](out/compton/e=6400.00-emin=1.00-3d-traces.png)
 
-I also tried drawing the distribution of photons exiting the metrial from the "back side",
-plotted as a 2D histogram in log brightness, but it turned out to be not very interesting,
+I also tried plotting a distribution of photons exiting the metrial on the "back side"
+as a 2D histogram in log brightness, but it turned out to be not very interesting,
 and not depend significantly on photon's energy.
 
 ![](out/compton/e=3200.00-emin=1.00-backside-image.png)
