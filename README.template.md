@@ -298,9 +298,9 @@ $$
 \begin{aligned}
 P(s_i < s_j, j \ne i)
 &= \int_0^{+\infty} dx f_{s_i}(x) \prod_{j, j \ne i} (1 - C_{s_j}(x)) \\
-&= \int_0^{+\infty} dx \, \mu_i e^{- \mu_i x} e^{- \left(\sum_{j, j \ne i} \mu_j \right) x} \\
-&= \mu_i \, \int_0^{+\infty} dx e^{- \left(\mu_i + \sum_{j, j \ne i} \mu_j \right) x} \\
-&= \mu_i \, \int_0^{+\infty} dx e^{- \mu x} \\
+&= \int_0^{+\infty} dx \mu_i e^{- \mu_i x} e^{- \left(\sum_{j, j \ne i} \mu_j \right) x} \\
+&= \mu_i \int_0^{+\infty} dx e^{- \left(\mu_i + \sum_{j, j \ne i} \mu_j \right) x} \\
+&= \mu_i \int_0^{+\infty} dx e^{- \mu x} \\
 &= \frac {\mu_i} {\mu} \\
 \end{aligned}
 $$
