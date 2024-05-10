@@ -1013,8 +1013,8 @@ For example, in 5 dimensions the previous function would be better integrated by
 while for this one the errors of two methods are comparable.
 
 The explaination is as follows, considering one dimension for clarity:
-on $x \in [0, 1]$ the function $x^2$ varies in $[0, 1]$, while the $e^{-x}$
-- only in $[0, e^{-1}] \approx [0, 0.37]$. So, the previous function is "cuspier",
+on $x \in [0, 1]$ the function $x^2$ varies in $[0, 1]$, while the $e^{-x}$ - only
+in $[0, e^{-1}] \approx [0, 0.37]$. So, the previous function is "cuspier",
 making midpoint formula more biased: it can't probe the peak and underestimates
 the integral.
 
