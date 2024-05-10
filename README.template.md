@@ -323,7 +323,7 @@ $\frac{E'}{E} = \frac{1}{1 + \kappa t}$ ($\kappa \equiv E / m_e c^2$).
 Example distribution for $\kappa = 0.5$:
 
 ![compton-energy](out/ex8/k=0.50-E-dist.png)
-![compton-angle](out/ex8/k=0.50-theta-dist)
+![compton-angle](out/ex8/k=0.50-theta-dist.png)
 
 <details>
 
