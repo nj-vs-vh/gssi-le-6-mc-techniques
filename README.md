@@ -1294,7 +1294,7 @@ process #5: 28.508% of samples, 100*mu_i/mu = 28.571428
 ```
 
 To rigorously prove this, consider a set of exponential random variables
-$s_i = \mathrm{Exp}(\mu_i)$ and compute the probability for the $i$th value to be the smallest one
+$s_i = \mathrm{Exp}(\mu_i)$ and compute the probability for the $i$-th value to be the smallest one
 
 $$
 \begin{aligned}
