@@ -122,9 +122,10 @@ fn estimate_pi_error(rng: &mut ThreadRng) {
         let (mu, sigma) = mean_std(&pi_est_sample);
         let k_est = sigma * (total_throws as f32).sqrt();
         println!(
-            "Sample moments: {:e} +/- {:e}, k = sigma*sqrt(N) = {:.5}",
-            mu, sigma, k_est,
+            "N = {}, pi estimation: {:e} +/- {:e}; k = sigma*sqrt(N) = {:.5}",
+            total_throws, mu, sigma, k_est,
         );
+        println!("{}, {}", total_throws, sigma);
 
         let sqrt_throws = (total_throws as f64).sqrt();
         // 10 / sqrt(N) scaling is ad hoc

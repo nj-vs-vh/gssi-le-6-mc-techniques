@@ -575,9 +575,10 @@ fn estimate_pi_error(rng: &mut ThreadRng) {
         let (mu, sigma) = mean_std(&pi_est_sample);
         let k_est = sigma * (total_throws as f32).sqrt();
         println!(
-            "Sample moments: {:e} +/- {:e}, k = sigma*sqrt(N) = {:.5}",
-            mu, sigma, k_est,
+            "N = {}, pi estimation: {:e} +/- {:e}; k = sigma*sqrt(N) = {:.5}",
+            total_throws, mu, sigma, k_est,
         );
+        println!("{}, {}", total_throws, sigma);
 
         let sqrt_throws = (total_throws as f64).sqrt();
         // 10 / sqrt(N) scaling is ad hoc
@@ -666,17 +667,27 @@ a $1 / \sqrt{N}$ envelope (straight purple line) with some fluctuations.
 
 To estimate the error, we can fix the number of throws $N$ and repeat the procedure to get the
 distribution of the $\pi$ estimate. From it, we obtain the Gaussian-looking sample of estimates and
-calculate the scaling factor $k \equiv \sigma \sqrt{N}$, which turns out to be around 1-2,
-although it fluctuates significantly and seems to depend on the number of throws.
-Using the conservative value of $k=2$ we conclude that to get the precision
-$\sigma = 10^{-4}$, we need to throw at least
-$N = \left( \frac{k}{\sigma} \right)^2 = 4 \cdot 10^8$ points.
+estimate $sigma$. After that we can fig the dependence of $sigma(N)$ to find sigma. Namely, the
+linear fit for $sigma(1 / \sqrt{N})$ gives $\hat k = 1.56 \pm 0.26$, which is in agreement with the
+true value of $\sqrt{\pi (4 - \pi)} \approx 1.642$.
+
+![](out/ex3/pi-error-fit.png)
+
+Using the best-fit value of $k$ we conclude that to get the precision $\sigma = 10^{-4}$,
+we need to throw at least $N = \left( \frac{k}{\sigma} \right)^2 \approx 2.4 \cdot 10^8$ points.
+
+
+<details>
+
+<summary>Distribution for different numbers of throws</summary>
 
 ![pi-est-1](out/ex3/pi-est-distribution-50-throws.png)
 ![pi-est-2](out/ex3/pi-est-distribution-100-throws.png)
 ![pi-est-3](out/ex3/pi-est-distribution-500-throws.png)
 ![pi-est-4](out/ex3/pi-est-distribution-1000-throws.png)
 ![pi-est-5](out/ex3/pi-est-distribution-5000-throws.png)
+
+</details>
 
 
 ## Ex. 5: Monte-Carlo integration
