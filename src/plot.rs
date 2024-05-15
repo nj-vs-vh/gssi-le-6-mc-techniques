@@ -115,6 +115,7 @@ fn find_extent<'a>(
 pub struct Line {
     pub data: Vec<(f32, f32)>,
     pub label: String,
+    pub point_size: Option<u32>,
 }
 
 pub fn plot_lines(
@@ -163,10 +164,11 @@ pub fn plot_lines(
         .draw()?;
 
     for (idx, line) in lines.into_iter().enumerate() {
-        chart
-            .draw_series(LineSeries::new(line.data, Palette99::pick(idx)))
-            .unwrap()
-            .label(line.label);
+        let mut ls = LineSeries::new(line.data, Palette99::pick(idx).filled());
+        if let Some(ps) = line.point_size {
+            ls = ls.point_size(ps)
+        }
+        chart.draw_series(ls).unwrap().label(line.label);
     }
 
     fig.present()?;

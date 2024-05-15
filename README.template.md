@@ -90,8 +90,9 @@ faster, but optimization makes its lead much more pronounced:
 !include[Execution log](out/ex3/ex3.log)
 
 To check the convergence, I plot the logarithm of absolute estimation error
-vs. the number of throws. All traces converge (error decreases), but rather
-slowly and with large fluctuations.
+vs. the number of throws. All traces converge (error decreases) according to
+a $1 / \sqrt{N}$ envelope (straight purple line) with some fluctuations.
+
 
 ![pi-throws](out/ex3/pi.png)
 

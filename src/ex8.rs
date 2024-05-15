@@ -61,6 +61,7 @@ fn plot_compton_scattering_sample(rng: &mut ThreadRng, k: &f32) {
                 .map(|(rx, ry)| (*rx, *ry))
                 .collect_vec(),
             label: "Klein-Nishina cross section".to_owned(),
+            point_size: None,
         }],
         &format!("Klein-Nishina cross section for E = {:.1} m_e c^2", k),
         "cos(theta)",

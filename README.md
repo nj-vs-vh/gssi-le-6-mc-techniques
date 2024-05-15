@@ -451,7 +451,10 @@ faster, but optimization makes its lead much more pronounced:
 <summary>Source code</summary>
 
 ```rust
+use std::collections::HashSet;
+
 use crate::{plot::AxLim, utils::mean_std};
+use itertools::Itertools;
 use ndhistogram::{axis::UniformNoFlow, ndhistogram, Histogram};
 use rand::prelude::*;
 
@@ -473,24 +476,34 @@ fn estimate_pi(thrown_inside: usize, thrown_total: usize) -> f32 {
 fn produce_pi_series(
     rng: &mut ThreadRng,
     total_steps: usize,
-    record_each: Option<usize>,
+    record_steps: Option<usize>,
     logging: bool,
 ) -> Vec<(f32, f32)> {
+    let mut steps_to_record: HashSet<usize> = HashSet::new();
+    if let Some(record_steps) = record_steps {
+        let log_min = 1.0;
+        let log_max = (total_steps as f32).log10();
+        let log_range = log_max - log_min;
+        let log_linspace = (0..record_steps)
+            .map(|ibin| log_min + log_range * (ibin as f32) / (record_steps as f32));
+        for sr in log_linspace.into_iter().map(|log| log.powi(10) as usize) {
+            steps_to_record.insert(sr);
+        }
+    }
+
     let mut pi_estimates: Vec<(f32, f32)> = Vec::new();
     let mut thrown_inside: usize = 0;
     for step in 1..total_steps + 1 {
         if throw_into_circle(rng) {
             thrown_inside += 1;
         }
-        if let Some(record_each) = record_each {
-            if step % record_each == 0 {
-                let logstep = (step as f32).log10();
-                pi_estimates.push((logstep, estimate_pi(thrown_inside, step)))
-            }
+        if steps_to_record.contains(&step) {
+            let logstep = (step as f32).log10();
+            pi_estimates.push((logstep, estimate_pi(thrown_inside, step)))
         }
     }
 
-    if record_each.is_none() {
+    if record_steps.is_none() {
         pi_estimates.push((
             (total_steps as f32).log10(),
             estimate_pi(thrown_inside, total_steps),
@@ -507,11 +520,19 @@ fn produce_pi_series(
 }
 
 fn plot_pi_series(rng: &mut ThreadRng) {
-    let steps_total: usize = 5_000_000;
-    let record_each: usize = 10_000;
-    let pi_samples: Vec<Vec<(f32, f32)>> = (0..3)
-        .map(|_| produce_pi_series(rng, steps_total, Some(record_each), true))
+    let total_steps: usize = 10_000_000;
+    let record_steps: usize = 200;
+    let pi_samples: Vec<Vec<(f32, f32)>> = (0..5)
+        .map(|_| produce_pi_series(rng, total_steps, Some(record_steps), true))
         .collect();
+
+    let envelope_line = [1, total_steps + 1]
+        .into_iter()
+        .map(|step| {
+            let logstep = (step as f32).log10();
+            (logstep, -logstep / 2.0) // 1/sqrt(step) => - log(step) / 2
+        })
+        .collect_vec();
 
     plot_lines(
         pi_samples
@@ -523,7 +544,13 @@ fn plot_pi_series(rng: &mut ThreadRng) {
                     .map(|(logstep, pi_est)| (*logstep, (PI32 - pi_est).abs().log10()))
                     .collect(),
                 label: format!("Run #{}", idx),
+                point_size: Some(2),
             })
+            .chain([Line {
+                data: envelope_line,
+                label: "Envelope".to_owned(),
+                point_size: None,
+            }])
             .collect(),
         "Pi value estimation convergence",
         "log_10(step)",
@@ -628,8 +655,9 @@ Total runtime: 5.93 sec
 
 
 To check the convergence, I plot the logarithm of absolute estimation error
-vs. the number of throws. All traces converge (error decreases), but rather
-slowly and with large fluctuations.
+vs. the number of throws. All traces converge (error decreases) according to
+a $1 / \sqrt{N}$ envelope (straight purple line) with some fluctuations.
+
 
 ![pi-throws](out/ex3/pi.png)
 
@@ -1378,6 +1406,7 @@ fn plot_compton_scattering_sample(rng: &mut ThreadRng, k: &f32) {
                 .map(|(rx, ry)| (*rx, *ry))
                 .collect_vec(),
             label: "Klein-Nishina cross section".to_owned(),
+            point_size: None,
         }],
         &format!("Klein-Nishina cross section for E = {:.1} m_e c^2", k),
         "cos(theta)",
