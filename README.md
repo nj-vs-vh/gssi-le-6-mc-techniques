@@ -708,12 +708,13 @@ use crate::{
 };
 
 fn onedim_mc_integral(rng: &mut ThreadRng, pow: i32, sample_count: usize) -> f32 {
-    let func = |x: f32| x.powi(pow);
     let n = sample_count as f32;
-    let func_mean = (0..sample_count)
-        .map(|_| func(rng.gen::<f32>()) / n)
-        .sum::<f32>();
-    func_mean // *(b - a), but in this case it's 1
+    (0..sample_count)
+        .map(|_| rng.gen::<f32>().powi(pow))
+        .chunks(1000)
+        .into_iter()
+        .map(|chunk| chunk.sum::<f32>() / n)
+        .sum::<f32>() // *(b - a), but in this case it's 1
 }
 
 fn plot_onedim_integral_mc_distributions(rng: &mut ThreadRng) {
@@ -748,7 +749,12 @@ fn plot_onedim_integral_mc_distributions(rng: &mut ThreadRng) {
                 pow, sample_count
             ),
             AxLim::Range(lo, hi),
-            Some(vec![true_value]),
+            Some(vec![
+                true_value,
+                mu as f64,
+                (mu - sigma) as f64,
+                (mu + sigma) as f64,
+            ]),
         )
         .expect("Failed to plot histogram");
     }
@@ -890,9 +896,9 @@ pub fn ex5() {
     println!("\nEx. 5.1");
     plot_onedim_integral_mc_distributions(&mut rng);
     println!("\nEx. 5.2");
-    plot_ndim_integral_mc_vs_midpoint(&mut rng, Integrand::SquaresSum);
+    // plot_ndim_integral_mc_vs_midpoint(&mut rng, Integrand::SquaresSum);
     println!("\nEx. 5.3");
-    plot_ndim_integral_mc_vs_midpoint(&mut rng, Integrand::ExpProduct);
+    // plot_ndim_integral_mc_vs_midpoint(&mut rng, Integrand::ExpProduct);
 }
 
 ```
