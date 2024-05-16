@@ -196,7 +196,7 @@ pub fn ex5() {
     println!("\nEx. 5.1");
     plot_onedim_integral_mc_distributions(&mut rng);
     println!("\nEx. 5.2");
-    // plot_ndim_integral_mc_vs_midpoint(&mut rng, Integrand::SquaresSum);
+    plot_ndim_integral_mc_vs_midpoint(&mut rng, Integrand::SquaresSum);
     println!("\nEx. 5.3");
-    // plot_ndim_integral_mc_vs_midpoint(&mut rng, Integrand::ExpProduct);
+    plot_ndim_integral_mc_vs_midpoint(&mut rng, Integrand::ExpProduct);
 }
