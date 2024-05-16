@@ -158,14 +158,23 @@ fn plot_ndim_integral_mc_vs_midpoint(rng: &mut ThreadRng, integrand: Integrand) 
             time,
             time / (evals as f32)
         );
-        let (mu, sigma) = mean_std(&int_mc_evals);
-        let lo = (mu - 5.0 * sigma) as f64;
-        let hi = (mu + 5.0 * sigma) as f64;
+        let (int_mc_mu, int_mc_sigma) = mean_std(&int_mc_evals);
+        let lo = (int_mc_mu - 5.0 * int_mc_sigma) as f64;
+        let hi = (int_mc_mu + 5.0 * int_mc_sigma) as f64;
         let mut hist = ndhistogram!(UniformNoFlow::new(30, lo, hi));
         for value in int_mc_evals {
             hist.fill(&(value as f64));
         }
         let true_value = integrand.true_integral(ndim);
+
+        println!(
+            "| {} | {:.4} | {:.2e} | {:.2e} | {:.2e} |",
+            ndim,
+            true_value,
+            int_midpoint - true_value,
+            int_mc_mu as f64 - true_value,
+            int_mc_sigma
+        );
 
         plot_histogram(
             &hist,

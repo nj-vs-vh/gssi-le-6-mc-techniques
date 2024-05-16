@@ -76,19 +76,19 @@ fn plot_compton_scattering_sample(rng: &mut ThreadRng, k: &f32) {
         .collect_vec();
 
     // plotting theta distribution
-    let mut theta_hist = ndhistogram!(UniformNoFlow::new(100, 0.0, std::f64::consts::PI));
+    let mut costheta_hist = ndhistogram!(UniformNoFlow::new(100, 0.0, 1.0));
     for photon in scattered_photons.iter() {
-        theta_hist.fill(&(photon.theta as f64));
+        costheta_hist.fill(&(photon.theta as f64).cos());
     }
     plot_histogram(
-        &theta_hist,
+        &costheta_hist,
         &format!(
             "Compton-scattered photon angles distribution for E = {:.2} KeV",
             primary_energy_kev,
         ),
-        "theta",
+        "cos(theta)",
         &format!("out/ex8/k={:.2}-theta-dist.png", k),
-        crate::plot::AxLim::FromData,
+        crate::plot::AxLim::Range(0.0, 1.0),
         None,
     )
     .expect("Failed to plot theta histogram");

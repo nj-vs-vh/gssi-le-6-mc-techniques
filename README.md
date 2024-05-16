@@ -858,14 +858,23 @@ fn plot_ndim_integral_mc_vs_midpoint(rng: &mut ThreadRng, integrand: Integrand) 
             time,
             time / (evals as f32)
         );
-        let (mu, sigma) = mean_std(&int_mc_evals);
-        let lo = (mu - 5.0 * sigma) as f64;
-        let hi = (mu + 5.0 * sigma) as f64;
+        let (int_mc_mu, int_mc_sigma) = mean_std(&int_mc_evals);
+        let lo = (int_mc_mu - 5.0 * int_mc_sigma) as f64;
+        let hi = (int_mc_mu + 5.0 * int_mc_sigma) as f64;
         let mut hist = ndhistogram!(UniformNoFlow::new(30, lo, hi));
         for value in int_mc_evals {
             hist.fill(&(value as f64));
         }
         let true_value = integrand.true_integral(ndim);
+
+        println!(
+            "| {} | {:.4} | {:.2e} | {:.2e} | {:.2e} |",
+            ndim,
+            true_value,
+            int_midpoint - true_value,
+            int_mc_mu as f64 - true_value,
+            int_mc_sigma
+        );
 
         plot_histogram(
             &hist,
@@ -1033,6 +1042,20 @@ while MC integration stays consistent.
 
 ![mc-vs-midpoint-high-dim](out/ex5/2/squares-sum-mc-vs-midpoint-7-dim.png)
 
+The results for all dimensions are summarized in the table below:
+
+| $N_{dim}$ | True value | Midpoint error (determenistic) | MC error (bias) | MC error (statistical) |
+| --- | --- | --- | --- | ---  |
+| 1 | 0.3333 | 2.78e-7 | -9.73e-5 | 1.18e-3 |
+| 2 | 0.6667 | 4.73e-6 | 5.84e-5 | 1.69e-3 |
+| 3 | 1.0000 | -1.60e-4 | 1.52e-4 | 2.00e-3 |
+| 4 | 1.3333 | -1.30e-3 | 7.34e-5 | 2.18e-3 |
+| 5 | 1.6667 | -5.16e-3 | 7.18e-5 | 2.74e-3 |
+| 6 | 2.0000 | -1.40e-2 | -8.45e-5 | 3.45e-3 |
+| 7 | 2.3333 | -2.34e-2 | 1.25e-4 | 2.77e-3 |
+| 8 | 2.6667 | -4.17e-2 | 2.54e-5 | 3.31e-3 |
+
+
 <details>
 
 <summary>Plots for all dimensions</summary>
@@ -1056,6 +1079,17 @@ Qualitatively, the results are the same as for previous exercise, but the "criti
 number of dimensions, at which midpoint integration becomes worse than MC, is higher.
 For example, in 5 dimensions the previous function would be better integrated by MC,
 while for this one the errors of two methods are comparable.
+
+| $N_{dim}$ | True value | Midpoint error (determenistic) | MC error (bias) | MC error (statistical) |
+| --- | --- | --- | --- | ---  |
+| 1 | 0.6321 | 5.05e-8 | -5.26e-5 | 7.10e-4 |
+| 2 | 0.3996 | -2.78e-6 | 5.15e-6 | 6.56e-4 |
+| 3 | 0.2526 | -1.02e-5 | 1.25e-5 | 4.92e-4 |
+| 4 | 0.1597 | -1.28e-4 | -7.55e-6 | 3.56e-4 |
+| 5 | 0.1009 | -2.41e-4 | 1.93e-6 | 2.99e-4 |
+| 6 | 0.0638 | -4.55e-4 | -2.04e-5 | 2.23e-4 |
+| 7 | 0.0403 | -4.51e-4 | -9.82e-7 | 1.36e-4 |
+| 8 | 0.0255 | -5.24e-4 | 3.02e-7 | 9.68e-5 |
 
 The explaination is as follows, considering one dimension for clarity:
 on $x \in [0, 1]$ the function $x^2$ varies in $[0, 1]$, while the $e^{-x}$ - only
@@ -1438,19 +1472,19 @@ fn plot_compton_scattering_sample(rng: &mut ThreadRng, k: &f32) {
         .collect_vec();
 
     // plotting theta distribution
-    let mut theta_hist = ndhistogram!(UniformNoFlow::new(100, 0.0, std::f64::consts::PI));
+    let mut costheta_hist = ndhistogram!(UniformNoFlow::new(100, 0.0, 1.0));
     for photon in scattered_photons.iter() {
-        theta_hist.fill(&(photon.theta as f64));
+        costheta_hist.fill(&(photon.theta as f64).cos());
     }
     plot_histogram(
-        &theta_hist,
+        &costheta_hist,
         &format!(
             "Compton-scattered photon angles distribution for E = {:.2} KeV",
             primary_energy_kev,
         ),
-        "theta",
+        "cos(theta)",
         &format!("out/ex8/k={:.2}-theta-dist.png", k),
-        crate::plot::AxLim::FromData,
+        crate::plot::AxLim::Range(0.0, 1.0),
         None,
     )
     .expect("Failed to plot theta histogram");
@@ -1523,7 +1557,19 @@ Total runtime: 7.48 sec
 To sample Klein-Nishina, we can express it as a function of $\cos(\theta)$ and do a regular rejection
 sampling: repeatedly propose its value $t$ and accept it with probability equal to
 $\frac{1}{r_e^2} \frac{d\sigma}{d\Omega}$ - Klein-Nishina cross-section, normalized to be equal to $1$ at
-$\theta = 0 \Rightarrow \cos(\theta) = 1$. Sampling $\cos(\theta)$ implicitly takes care of spherical
+$\theta = 0 \Rightarrow \cos(\theta) = 1$. The exact rejection function is
+
+$$
+\begin{aligned}
+
+\frac{1}{r_e^2} \frac{d\sigma}{d\Omega} (\theta) = \frac 1 2 & F^2 \left( F + \frac 1 F - (1 - \cos(\theta)) \right)
+\\
+& F = \frac 1 { 1 + k (1 - \cos(\theta)) }
+\end{aligned}
+
+$$
+
+Sampling $\cos(\theta)$ implicitly takes care of spherical
 Jacobian, so the sampled direction is not uniform in $\theta$ but actually isotropic on a 3D sphere.
 
 After obtaining the value $\cos(\theta) = t$ from rejection sampling, we say that the photon will
