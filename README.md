@@ -1564,7 +1564,6 @@ $$
 \frac{1}{r_e^2} \frac{d\sigma}{d\Omega} (\theta) &= \frac 1 2 F^2 \left( F + \frac 1 F - (1 - \cos(\theta)) \right) \\
 F &= \frac 1 { 1 + k (1 - \cos(\theta)) }
 \end{aligned}
-
 $$
 
 Sampling $\cos(\theta)$ implicitly takes care of spherical
